@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { Ban, CheckCircle, Loader2, RefreshCw } from "lucide-react"
+import { Ban, Loader2, RefreshCw, Trash2, Shield, ShieldOff } from "lucide-react"
 
 interface Profile {
   id: string
@@ -24,6 +24,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchUsers = useCallback(async () => {
     setLoading(true)
@@ -40,7 +41,7 @@ export default function AdminUsersPage() {
   }, [fetchUsers])
 
   async function toggleBan(id: string, current: boolean) {
-    setActionLoading(id)
+    setActionLoading(`ban-${id}`)
     try {
       await fetch(`/api/admin/users/${id}`, {
         method: "PATCH",
@@ -48,6 +49,45 @@ export default function AdminUsersPage() {
         body: JSON.stringify({ is_banned: !current }),
       })
       await fetchUsers()
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  async function toggleAdmin(id: string, current: boolean) {
+    setActionLoading(`admin-${id}`)
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_admin: !current }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        setError(err.error || "Error al cambiar rol")
+      } else {
+        await fetchUsers()
+      }
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  async function deleteUser(id: string) {
+    if (!window.confirm("¿Estás seguro de eliminar este usuario? Se borrarán todas sus reseñas, comentarios y votos. Esta acción no se puede deshacer.")) return
+
+    setActionLoading(`delete-${id}`)
+    setError(null)
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: "DELETE",
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        setError(err.error || "Error al eliminar")
+      } else {
+        await fetchUsers()
+      }
     } finally {
       setActionLoading(null)
     }
@@ -74,6 +114,12 @@ export default function AdminUsersPage() {
         </button>
       </div>
 
+      {error && (
+        <div className="rounded-xl bg-destructive/10 p-4 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
       {users.length === 0 ? (
         <p className="text-sm text-muted-foreground">No hay usuarios.</p>
       ) : (
@@ -98,7 +144,7 @@ export default function AdminUsersPage() {
                   <td className="px-4 py-3">
                     {u.is_admin ? (
                       <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400">
-                        <CheckCircle className="h-3 w-3" />
+                        <Shield className="h-3 w-3" />
                         Admin
                       </span>
                     ) : (
@@ -116,28 +162,59 @@ export default function AdminUsersPage() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    {!u.is_admin && (
+                    <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => toggleBan(u.id, u.is_banned)}
-                        disabled={actionLoading === u.id}
-                        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all disabled:opacity-50 ${
+                        disabled={actionLoading === `ban-${u.id}`}
+                        className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all disabled:opacity-50 ${
                           u.is_banned
                             ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
                             : "bg-red-500/10 text-red-400 hover:bg-red-500/20"
                         }`}
                       >
-                        {actionLoading === u.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin mx-auto" />
+                        {actionLoading === `ban-${u.id}` ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         ) : u.is_banned ? (
                           "Desbanear"
                         ) : (
                           "Banear"
                         )}
                       </button>
-                    )}
-                    {u.is_admin && (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
+
+                      <button
+                        onClick={() => toggleAdmin(u.id, u.is_admin)}
+                        disabled={actionLoading === `admin-${u.id}`}
+                        className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all disabled:opacity-50 ${
+                          u.is_admin
+                            ? "bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
+                            : "bg-neutral-500/10 text-neutral-400 hover:bg-neutral-500/20"
+                        }`}
+                        title={u.is_admin ? "Quitar admin" : "Hacer admin"}
+                      >
+                        {actionLoading === `admin-${u.id}` ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : u.is_admin ? (
+                          <ShieldOff className="h-3.5 w-3.5" />
+                        ) : (
+                          <Shield className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+
+                      {!u.is_admin && (
+                        <button
+                          onClick={() => deleteUser(u.id)}
+                          disabled={actionLoading === `delete-${u.id}`}
+                          className="rounded-lg p-1.5 text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50"
+                          title="Eliminar usuario"
+                        >
+                          {actionLoading === `delete-${u.id}` ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

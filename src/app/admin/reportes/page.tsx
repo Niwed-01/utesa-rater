@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { CheckCircle, XCircle, EyeOff, Eye, Loader2, RefreshCw } from "lucide-react"
+import { CheckCircle, XCircle, EyeOff, Eye, Loader2, RefreshCw, Trash2 } from "lucide-react"
 
 interface PostInfo {
   id: string
@@ -46,6 +46,7 @@ export default function AdminReportsPage() {
   const [reports, setReports] = useState<Report[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchReports = useCallback(async () => {
     setLoading(true)
@@ -89,6 +90,27 @@ export default function AdminReportsPage() {
     }
   }
 
+  async function deleteContent(type: "posts" | "comments", id: string) {
+    const label = type === "posts" ? "reseña" : "comentario"
+    if (!window.confirm(`¿Estás seguro de eliminar este ${label}? Esta acción no se puede deshacer.`)) return
+
+    setActionLoading(`delete-${type}-${id}`)
+    setError(null)
+    try {
+      const res = await fetch(`/api/admin/${type}/${id}`, {
+        method: "DELETE",
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        setError(err.error || "Error al eliminar")
+      } else {
+        await fetchReports()
+      }
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -109,6 +131,12 @@ export default function AdminReportsPage() {
           Recargar
         </button>
       </div>
+
+      {error && (
+        <div className="rounded-xl bg-destructive/10 p-4 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       {reports.length === 0 ? (
         <p className="text-sm text-muted-foreground">No hay reportes.</p>
@@ -180,20 +208,34 @@ export default function AdminReportsPage() {
                           </button>
                         )}
                         {content && (
-                          <button
-                            onClick={() => toggleHide(type, content.id, content.is_hidden)}
-                            disabled={actionLoading === `hide-${type}-${content.id}`}
-                            className="rounded-lg p-1.5 text-amber-500 hover:bg-amber-500/10 transition-all disabled:opacity-50"
-                            title={content.is_hidden ? "Mostrar" : "Ocultar"}
-                          >
-                            {actionLoading === `hide-${type}-${content.id}` ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : content.is_hidden ? (
-                              <Eye className="h-4 w-4" />
-                            ) : (
-                              <EyeOff className="h-4 w-4" />
-                            )}
-                          </button>
+                          <>
+                            <button
+                              onClick={() => toggleHide(type, content.id, content.is_hidden)}
+                              disabled={actionLoading === `hide-${type}-${content.id}`}
+                              className="rounded-lg p-1.5 text-amber-500 hover:bg-amber-500/10 transition-all disabled:opacity-50"
+                              title={content.is_hidden ? "Mostrar" : "Ocultar"}
+                            >
+                              {actionLoading === `hide-${type}-${content.id}` ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : content.is_hidden ? (
+                                <Eye className="h-4 w-4" />
+                              ) : (
+                                <EyeOff className="h-4 w-4" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => deleteContent(type, content.id)}
+                              disabled={actionLoading === `delete-${type}-${content.id}`}
+                              className="rounded-lg p-1.5 text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50"
+                              title="Eliminar"
+                            >
+                              {actionLoading === `delete-${type}-${content.id}` ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>

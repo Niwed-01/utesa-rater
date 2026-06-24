@@ -279,6 +279,10 @@ create policy "admin_delete_classes" on classes for delete
   using (public.is_admin());
 create policy "admin_delete_reports" on reports for delete
   using (public.is_admin());
+create policy "admin_delete_posts" on posts for delete
+  using (public.is_admin());
+create policy "admin_delete_comments" on comments for delete
+  using (public.is_admin());
 
 -- Admin puede ver todos los perfiles y editar ban/rol
 create policy "admin_select_profiles" on profiles for select

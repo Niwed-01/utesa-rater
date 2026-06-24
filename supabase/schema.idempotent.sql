@@ -272,6 +272,8 @@ do $$ begin
   drop policy if exists "admin_delete_professors" on professors;
   drop policy if exists "admin_delete_classes" on classes;
   drop policy if exists "admin_delete_reports" on reports;
+  drop policy if exists "admin_delete_posts" on posts;
+  drop policy if exists "admin_delete_comments" on comments;
   -- Votes
   drop policy if exists "manage_own_votes" on votes;
   -- Profiles (admin)
@@ -327,6 +329,10 @@ create policy "admin_delete_professors" on professors for delete
 create policy "admin_delete_classes" on classes for delete
   using (public.is_admin());
 create policy "admin_delete_reports" on reports for delete
+  using (public.is_admin());
+create policy "admin_delete_posts" on posts for delete
+  using (public.is_admin());
+create policy "admin_delete_comments" on comments for delete
   using (public.is_admin());
 
 create policy "admin_select_profiles" on profiles for select
