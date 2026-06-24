@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { ProfessorCard } from "@/components/professor-card"
 import Link from "next/link"
-import { Search, GraduationCap, BookOpen, Users } from "lucide-react"
+import { Search, BookOpen, Users } from "lucide-react"
 import { SearchInput } from "./search-input"
 
 export const dynamic = "force-dynamic"
@@ -177,7 +177,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
         <div className="rounded-2xl border border-dashed border-border p-12 text-center">
           <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground mb-4">
-            No encontramos profesores ni materias para "{q}".
+            No encontramos profesores ni materias para &ldquo;{q}&rdquo;.
           </p>
           <Link
             href="/profesores"
