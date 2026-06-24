@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Star, Scale, MessageSquareText, ClipboardCheck, GraduationCap } from "lucide-react"
+import { Star, Scale, MessageSquareText, ClipboardCheck, GraduationCap, Clock, Brain, Calendar } from "lucide-react"
 import { RatingStars } from "@/components/rating-stars"
 import { cn } from "@/lib/utils"
 import { postSchema } from "@/lib/validations"
@@ -24,6 +24,9 @@ export function CalificarForm() {
 
   const [claridad, setClaridad] = useState(0)
   const [justicia, setJusticia] = useState(0)
+  const [puntualidad, setPuntualidad] = useState(0)
+  const [exigencia, setExigencia] = useState(0)
+  const [disponibilidad, setDisponibilidad] = useState(0)
   const [volveria, setVolveria] = useState<boolean | null>(null)
   const [body, setBody] = useState("")
   const [selectedClase, setSelectedClase] = useState<{ id: string; name: string } | null>(null)
@@ -64,9 +67,9 @@ export function CalificarForm() {
       volveria_a_tomar: volveria ?? true,
       rating_claridad: claridad,
       rating_justicia: justicia,
-      rating_puntualidad: 3,
-      rating_exigencia: 3,
-      rating_disponibilidad: 3,
+      rating_puntualidad: puntualidad,
+      rating_exigencia: exigencia,
+      rating_disponibilidad: disponibilidad,
     }
 
     const parsed = postSchema.safeParse(payload)
@@ -102,6 +105,9 @@ export function CalificarForm() {
     setProfessorConfirmed(false)
     setClaridad(0)
     setJusticia(0)
+    setPuntualidad(0)
+    setExigencia(0)
+    setDisponibilidad(0)
     setVolveria(null)
     setBody("")
     setSelectedClase(null)
@@ -172,6 +178,33 @@ export function CalificarForm() {
           value={justicia}
           onChange={setJusticia}
           fieldError={fieldErrors.rating_justicia?.[0]}
+        />
+
+        <RatingQuestion
+          icon={<Clock className="h-5 w-5" />}
+          title="¿Es puntual?"
+          description="¿El profesor comienza y termina sus clases a tiempo? La puntualidad dice mucho de su compromiso."
+          value={puntualidad}
+          onChange={setPuntualidad}
+          fieldError={fieldErrors.rating_puntualidad?.[0]}
+        />
+
+        <RatingQuestion
+          icon={<Brain className="h-5 w-5" />}
+          title="¿Qué tan exigente es?"
+          description="Algunos profesores retan a sus estudiantes a dar más. ¿Sentiste que el nivel de exigencia fue adecuado?"
+          value={exigencia}
+          onChange={setExigencia}
+          fieldError={fieldErrors.rating_exigencia?.[0]}
+        />
+
+        <RatingQuestion
+          icon={<Calendar className="h-5 w-5" />}
+          title="¿Está disponible fuera de clases?"
+          description="¿El profesor tiene horarios de oficina, responde dudas por correo o muestra disposición a ayudar fuera del aula?"
+          value={disponibilidad}
+          onChange={setDisponibilidad}
+          fieldError={fieldErrors.rating_disponibilidad?.[0]}
         />
 
         <VolveriaSection value={volveria} onChange={setVolveria} />

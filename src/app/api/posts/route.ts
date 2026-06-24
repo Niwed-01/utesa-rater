@@ -30,9 +30,9 @@ export async function POST(request: Request) {
       alias: generarAlias(),
       rating_claridad: parsed.data.rating_claridad,
       rating_justicia: parsed.data.rating_justicia,
-      rating_puntualidad: parsed.data.rating_puntualidad ?? 3,
-      rating_exigencia: parsed.data.rating_exigencia ?? 3,
-      rating_disponibilidad: parsed.data.rating_disponibilidad ?? 3,
+      rating_puntualidad: parsed.data.rating_puntualidad,
+      rating_exigencia: parsed.data.rating_exigencia,
+      rating_disponibilidad: parsed.data.rating_disponibilidad,
       semester: parsed.data.semester,
     })
     .select("id")

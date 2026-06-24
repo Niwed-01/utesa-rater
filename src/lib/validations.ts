@@ -33,9 +33,9 @@ export const postSchema = z.object({
   volveria_a_tomar: z.boolean().default(true),
   rating_claridad: z.number().int().min(1).max(5),
   rating_justicia: z.number().int().min(1).max(5),
-  rating_puntualidad: z.number().int().min(1).max(5).optional().default(3),
-  rating_exigencia: z.number().int().min(1).max(5).optional().default(3),
-  rating_disponibilidad: z.number().int().min(1).max(5).optional().default(3),
+  rating_puntualidad: z.number().int().min(1).max(5),
+  rating_exigencia: z.number().int().min(1).max(5),
+  rating_disponibilidad: z.number().int().min(1).max(5),
   semester: z.string().regex(/^\d{4}-[123]0$/, "Selecciona un trimestre válido"),
 })
 
