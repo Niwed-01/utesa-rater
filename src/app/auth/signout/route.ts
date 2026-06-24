@@ -1,12 +1,8 @@
-import { NextResponse, type NextRequest } from "next/server"
-import { createMiddlewareClient } from "@/lib/supabase/server"
+import { NextResponse } from "next/server"
+import { createClient } from "@/lib/supabase/server"
 
-export async function POST(request: NextRequest) {
-  const { supabase, response } = createMiddlewareClient(request, (req) =>
-    NextResponse.redirect(new URL("/", req.url)),
-  )
-
+export async function POST() {
+  const supabase = await createClient()
   await supabase.auth.signOut()
-
-  return response
+  return NextResponse.redirect(new URL("/", process.env.NEXT_PUBLIC_SITE_URL || "https://utesa-rater.vercel.app"))
 }

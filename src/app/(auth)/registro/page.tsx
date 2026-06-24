@@ -44,6 +44,9 @@ export default function RegistroPage() {
     const { error: authError } = await supabase.auth.signUp({
       email: result.data.email,
       password: result.data.password,
+      options: {
+        emailRedirectTo: "https://utesa-rater.vercel.app/auth/callback",
+      },
     })
 
     if (authError) {
