@@ -329,7 +329,7 @@ function VolveriaSection({
               type="button"
               onClick={() => onChange(true)}
               className={cn(
-                "flex flex-1 items-center justify-center gap-2 rounded-xl border px-6 py-3 text-sm font-semibold transition-all",
+                "flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 md:px-6 py-3 text-sm font-semibold transition-all",
                 value === true
                   ? "border-emerald-500 bg-emerald-500/10 text-emerald-500 shadow-sm"
                   : "border-border text-muted-foreground hover:border-emerald-500/50 hover:text-emerald-500",
@@ -344,7 +344,7 @@ function VolveriaSection({
               type="button"
               onClick={() => onChange(false)}
               className={cn(
-                "flex flex-1 items-center justify-center gap-2 rounded-xl border px-6 py-3 text-sm font-semibold transition-all",
+                "flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 md:px-6 py-3 text-sm font-semibold transition-all",
                 value === false
                   ? "border-destructive bg-destructive/10 text-destructive shadow-sm"
                   : "border-border text-muted-foreground hover:border-destructive/50 hover:text-destructive",

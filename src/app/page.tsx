@@ -53,7 +53,7 @@ export default async function HomePage() {
   return (
     <div className="space-y-12">
       {/* 400px Header Banner with custom HSL gradient & search */}
-      <header className="relative overflow-hidden rounded-3xl border border-emerald-500/20 bg-gradient-to-b from-neutral-950 via-emerald-950/20 to-neutral-950 py-16 px-6 text-center shadow-2xl flex flex-col items-center justify-center min-h-[380px]">
+      <header className="relative overflow-hidden rounded-3xl border border-emerald-500/20 bg-gradient-to-b from-neutral-950 via-emerald-950/20 to-neutral-950 py-16 px-6 text-center shadow-2xl flex flex-col items-center justify-center min-h-[300px] md:min-h-[380px]">
         {/* Decorative background grid */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#0596690a_1px,transparent_1px),linear-gradient(to_bottom,#0596690a_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 h-72 w-96 rounded-full bg-emerald-500/10 blur-3xl" />
@@ -96,7 +96,7 @@ export default async function HomePage() {
       </header>
 
       {/* Stats Bar */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "Profesores", value: totalProfesores ?? 0, icon: GraduationCap },
           { label: "Reseñas", value: totalResenas ?? 0, icon: Star },

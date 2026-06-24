@@ -19,7 +19,7 @@ export function PaginationControls({ currentPage, totalPages, basePath }: Pagina
   }
 
   return (
-    <nav className="flex items-center justify-center gap-2 pt-2" aria-label="Paginación">
+    <nav className="flex items-center justify-center gap-2 pt-2 flex-wrap" aria-label="Paginación">
       {currentPage > 1 && (
         <Link
           href={`${basePath}?page=${currentPage - 1}`}

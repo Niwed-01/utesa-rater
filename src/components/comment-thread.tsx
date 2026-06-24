@@ -167,7 +167,7 @@ function CommentNode({
         const childReplies = getReplies(comment.id)
 
         return (
-            <div key={comment.id} className={`${depth > 0 ? "ml-6 border-l-2 border-border pl-4" : ""}`}>
+            <div key={comment.id} className={`${depth > 0 ? "ml-3 md:ml-6 border-l-2 border-border pl-2 md:pl-4" : ""}`}>
             <div className="rounded-md bg-secondary/50 p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
@@ -184,7 +184,6 @@ function CommentNode({
                     score={comment.vote_score}
                     userVote={null}
                     onVote={async (value) => { await onVote({ comment_id: comment.id, value }) }}
-                    size="sm"
                   />
                   <ReportButton commentId={comment.id} size="sm" />
                 </div>
@@ -205,7 +204,7 @@ function CommentNode({
             </div>
 
             {isReplying && (
-              <div className="mt-2 ml-6">
+              <div className="mt-2 ml-3 md:ml-6">
                 <form
                   onSubmit={(e) => { e.preventDefault(); onSubmit(comment.id) }}
                   className="flex gap-2"

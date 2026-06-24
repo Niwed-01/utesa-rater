@@ -7,10 +7,9 @@ interface VoteButtonsProps {
   score: number
   userVote: number | null
   onVote: (value: number) => Promise<void> | void
-  size?: "sm" | "md"
 }
 
-export function VoteButtons({ score, userVote, onVote, size = "md" }: VoteButtonsProps) {
+export function VoteButtons({ score, userVote, onVote }: VoteButtonsProps) {
   const [optimisticScore, setOptimisticScore] = useState(score)
   const [optimisticVote, setOptimisticVote] = useState(userVote)
   const prevState = useRef({ score, vote: userVote })
@@ -46,11 +45,11 @@ export function VoteButtons({ score, userVote, onVote, size = "md" }: VoteButton
   }
 
   return (
-    <div className={cn("flex items-center gap-1", size === "sm" && "scale-75")}>
+    <div className="flex items-center gap-1">
       <button
         onClick={() => handleVote(1)}
         className={cn(
-          "flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors",
+          "flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold transition-colors",
             optimisticVote === 1
               ? "bg-emerald-500/20 text-emerald-500"
             : "text-muted-foreground hover:bg-secondary hover:text-foreground",
@@ -72,7 +71,7 @@ export function VoteButtons({ score, userVote, onVote, size = "md" }: VoteButton
       <button
         onClick={() => handleVote(-1)}
         className={cn(
-          "flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors",
+          "flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold transition-colors",
           optimisticVote === -1
             ? "bg-destructive/20 text-destructive"
             : "text-muted-foreground hover:bg-secondary hover:text-foreground",

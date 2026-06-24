@@ -140,7 +140,7 @@ export function Navbar({ user, isAdmin = false }: NavbarProps) {
 
         {/* Mobile Dropdown Menu with overlay */}
         {isOpen && (
-          <div className="absolute top-[53px] left-0 w-full border-b border-border bg-neutral-950/95 backdrop-blur-lg flex flex-col p-4 md:hidden gap-3 shadow-xl animate-in slide-in-from-top-4 duration-200">
+          <div className="absolute top-full left-0 w-full border-b border-border bg-neutral-950/95 backdrop-blur-lg flex flex-col p-4 md:hidden gap-3 shadow-xl animate-in slide-in-from-top-4 duration-200">
             {navItems.map((item) => {
               const Icon = item.icon
               const active = isActive(item.href)

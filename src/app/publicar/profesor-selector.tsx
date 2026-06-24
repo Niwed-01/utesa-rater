@@ -229,21 +229,21 @@ export function ProfesorConfirmado({ profesor, onChange, onUpdate }: ProfesorCon
 
   return (
     <div className="mb-6 rounded-2xl border border-border bg-card p-5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-4 min-w-0">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
             <GraduationCap className="h-6 w-6" />
           </div>
-          <div>
-            <p className="text-lg font-semibold">{profesor.full_name}</p>
-            <p className="text-sm text-muted-foreground">
+          <div className="min-w-0 truncate">
+            <p className="text-lg font-semibold truncate">{profesor.full_name}</p>
+            <p className="text-sm text-muted-foreground truncate">
               {profesor.careers.length > 0
                 ? profesor.careers.map((c) => c.name).join(", ")
                 : "Sin carrera"}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {!editing && (
             <button
               type="button"

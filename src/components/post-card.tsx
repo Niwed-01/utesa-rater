@@ -80,7 +80,7 @@ export function PostCard({
             {formatDate(post.created_at)}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <VoteButtons
             score={post.vote_score}
             userVote={userVote}
@@ -143,7 +143,7 @@ export function PostCard({
         )}
       </CardFooter>
       {showComments && (
-        <div className="border-t border-border px-6 pb-4 pt-3">
+        <div className="border-t border-border px-4 sm:px-6 pb-4 pt-3">
           <CommentThread postId={post.id} />
         </div>
       )}
