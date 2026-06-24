@@ -23,19 +23,18 @@ export async function PATCH(
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 })
   }
 
-  const updates: Partial<{ is_banned: boolean; is_admin: boolean }> = {}
-  if (parsed.data.is_banned !== undefined) updates.is_banned = parsed.data.is_banned
-  if (parsed.data.is_admin !== undefined) updates.is_admin = parsed.data.is_admin
-
-  if (Object.keys(updates).length === 0) {
+  if (parsed.data.is_banned === undefined && parsed.data.is_admin === undefined) {
     return NextResponse.json({ error: "Nada que actualizar" }, { status: 400 })
   }
 
   const supabase = await createClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updateData: Record<string, boolean> = {}
+  if (parsed.data.is_banned !== undefined) updateData.is_banned = parsed.data.is_banned
+  if (parsed.data.is_admin !== undefined) updateData.is_admin = parsed.data.is_admin
+
   const { error } = await supabase
     .from("profiles")
-    .update(updates as any)
+    .update(updateData as never)
     .eq("id", id)
 
   if (error) {
