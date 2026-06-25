@@ -10,6 +10,10 @@ export const metadata: Metadata = {
   title: "UTESA Rater — Reseñas de profesores y materias de UTESA",
   description:
     "Opiniones y calificaciones de profesores de la Universidad Tecnológica de Santiago (UTESA). Calificaciones anónimas creadas por y para estudiantes.",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/apple-icon.png",
+  },
 }
 
 export const dynamic = "force-dynamic"
