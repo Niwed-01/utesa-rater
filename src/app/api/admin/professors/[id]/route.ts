@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 import { requireAdmin } from "@/lib/auth"
 import { z } from "zod"
 
@@ -22,8 +22,8 @@ export async function PATCH(
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 })
   }
 
-  const adminClient = createAdminClient()
-  const { error } = await adminClient
+  const supabase = await createClient()
+  const { error } = await supabase
     .from("professors")
     .update({
       ...(parsed.data.full_name !== undefined && { full_name: parsed.data.full_name }),
@@ -44,8 +44,8 @@ export async function DELETE(
 
   const { id } = await params
 
-  const adminClient = createAdminClient()
-  const { error } = await adminClient.from("professors").delete().eq("id", id)
+  const supabase = await createClient()
+  const { error } = await supabase.from("professors").delete().eq("id", id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ success: true })

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 import { requireAdmin } from "@/lib/auth"
 import { z } from "zod"
 
@@ -18,14 +18,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 })
   }
 
-  const admin = createAdminClient()
+  const supabase = await createClient()
   const { ids, action } = parsed.data
 
   if (action === "delete") {
-    const { error } = await admin.from("comments").delete().in("id", ids)
+    const { error } = await supabase.from("comments").delete().in("id", ids)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   } else {
-    const { error } = await admin
+    const { error } = await supabase
       .from("comments")
       .update({ is_hidden: action === "hide" })
       .in("id", ids)

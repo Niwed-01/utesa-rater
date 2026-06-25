@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdmin } from "@/lib/auth"
 import { z } from "zod"
 
@@ -35,8 +34,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Datos inválidos", details: parsed.error.flatten().fieldErrors }, { status: 400 })
   }
 
-  const adminClient = createAdminClient()
-  const { data, error } = await adminClient
+  const supabase = await createClient()
+  const { data, error } = await supabase
     .from("professors")
     .insert({ full_name: parsed.data.full_name, photo_url: parsed.data.photo_url ?? null })
     .select("id, full_name")

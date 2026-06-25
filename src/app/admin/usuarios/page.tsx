@@ -86,7 +86,7 @@ export default function AdminUsersPage() {
   }
 
   async function deleteUser(id: string) {
-    if (!window.confirm("¿Eliminar este usuario? Se borrarán todas sus reseñas, comentarios y votos.")) return
+    if (!window.confirm("¿Eliminar este usuario? Se baneará y anonimizará su email. Su contenido se conservará.")) return
     setActionLoading(`delete-${id}`); setError(null)
     try {
       const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" })

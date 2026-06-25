@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdmin } from "@/lib/auth"
 import { z } from "zod"
 
@@ -54,18 +53,33 @@ export async function DELETE(
   const { id } = await params
 
   const supabase = await createClient()
-  const { data: target } = await supabase
+  const { data: target, error: findError } = await supabase
     .from("profiles")
     .select("is_admin")
     .eq("id", id)
-    .single()
+    .maybeSingle()
 
-  if (target?.is_admin) {
+  if (findError) {
+    return NextResponse.json({ error: findError.message }, { status: 500 })
+  }
+
+  if (!target) {
+    return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
+  }
+
+  if (target.is_admin) {
     return NextResponse.json({ error: "No puedes eliminar a otro administrador" }, { status: 403 })
   }
 
-  const adminClient = createAdminClient()
-  const { error } = await adminClient.auth.admin.deleteUser(id)
+  const shortId = id.slice(0, 8)
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      is_banned: true,
+      email: `usuario-eliminado-${shortId}@anon.local`,
+      is_admin: false,
+    })
+    .eq("id", id)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
