@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
-import { CheckCircle, XCircle, EyeOff, Eye, Loader2, RefreshCw, Trash2 } from "lucide-react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { CheckCircle, XCircle, EyeOff, Eye, Loader2, RefreshCw, Trash2, Pencil } from "lucide-react"
 
 interface PostInfo {
   id: string
@@ -111,6 +111,34 @@ export default function AdminReportsPage() {
     }
   }
 
+  const [editContent, setEditContent] = useState<{ id: string; type: "posts" | "comments"; alias: string; body: string } | null>(null)
+  const [editBody, setEditBody] = useState("")
+  const editRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (editRef.current && !editRef.current.contains(e.target as Node)) setEditContent(null)
+    }
+    if (editContent) document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [editContent])
+
+  async function saveEdit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editContent || !editBody.trim()) return
+    setActionLoading(`edit-${editContent.id}`)
+    setError(null)
+    try {
+      const res = await fetch(`/api/admin/${editContent.type}/${editContent.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: editBody.trim() }),
+      })
+      if (!res.ok) { const err = await res.json(); setError(err.error || "Error") }
+      else { setEditContent(null); await fetchReports() }
+    } finally { setActionLoading(null) }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -210,6 +238,13 @@ export default function AdminReportsPage() {
                         {content && (
                           <>
                             <button
+                              onClick={() => { setEditContent({ id: content.id, type, alias: content.alias, body: content.body }); setEditBody(content.body) }}
+                              className="rounded-lg p-1.5 text-blue-400 hover:bg-blue-500/10 transition-all"
+                              title="Editar"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
                               onClick={() => toggleHide(type, content.id, content.is_hidden)}
                               disabled={actionLoading === `hide-${type}-${content.id}`}
                               className="rounded-lg p-1.5 text-amber-500 hover:bg-amber-500/10 transition-all disabled:opacity-50"
@@ -244,6 +279,32 @@ export default function AdminReportsPage() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Edit modal */}
+      {editContent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setEditContent(null)}>
+          <div ref={editRef} className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-bold mb-1">Editar {editContent.type === "posts" ? "reseña" : "comentario"}</h2>
+            <p className="text-xs text-muted-foreground mb-4">Alias: {editContent.alias}</p>
+            <form onSubmit={saveEdit} className="space-y-4">
+              <textarea
+                value={editBody}
+                onChange={e => setEditBody(e.target.value)}
+                rows={5}
+                maxLength={editContent.type === "posts" ? 3000 : 1000}
+                className="flex w-full rounded-xl border border-input bg-background px-4 py-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-y"
+                autoFocus
+              />
+              <div className="flex gap-2 justify-end">
+                <button type="button" onClick={() => setEditContent(null)} className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-white transition-all">Cancelar</button>
+                <button type="submit" disabled={actionLoading === `edit-${editContent.id}` || !editBody.trim()} className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 transition-all disabled:opacity-50">
+                  {actionLoading === `edit-${editContent.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

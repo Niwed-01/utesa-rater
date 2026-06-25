@@ -7,6 +7,8 @@ import {
   Users,
   FileText,
   MessageSquare,
+  GraduationCap,
+  BookOpen,
   ChevronLeft,
 } from "lucide-react"
 import { AdminMobileNav } from "@/components/admin-mobile-nav"
@@ -17,6 +19,8 @@ const sidebarLinks = [
   { name: "Usuarios", href: "/admin/usuarios", icon: Users },
   { name: "Reseñas", href: "/admin/resenas", icon: FileText },
   { name: "Comentarios", href: "/admin/comentarios", icon: MessageSquare },
+  { name: "Profesores", href: "/admin/profesores", icon: GraduationCap },
+  { name: "Materias", href: "/admin/materias", icon: BookOpen },
 ]
 
 export default async function AdminLayout({

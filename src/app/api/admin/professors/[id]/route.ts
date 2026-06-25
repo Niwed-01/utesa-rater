@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdmin } from "@/lib/auth"
 import { z } from "zod"
 
-const schema = z.object({
-  is_hidden: z.boolean().optional(),
-  body: z.string().min(1).max(1000).optional(),
+const patchSchema = z.object({
+  full_name: z.string().min(2).max(200).optional(),
+  photo_url: z.string().url().optional().nullable(),
 })
 
 export async function PATCH(
@@ -18,17 +17,17 @@ export async function PATCH(
 
   const { id } = await params
   const body = await request.json()
-  const parsed = schema.safeParse(body)
+  const parsed = patchSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 })
   }
 
-  const supabase = await createClient()
-  const { error } = await supabase
-    .from("comments")
+  const adminClient = createAdminClient()
+  const { error } = await adminClient
+    .from("professors")
     .update({
-      ...(parsed.data.is_hidden !== undefined && { is_hidden: parsed.data.is_hidden }),
-      ...(parsed.data.body !== undefined && { body: parsed.data.body }),
+      ...(parsed.data.full_name !== undefined && { full_name: parsed.data.full_name }),
+      ...(parsed.data.photo_url !== undefined && { photo_url: parsed.data.photo_url }),
     })
     .eq("id", id)
 
@@ -46,7 +45,7 @@ export async function DELETE(
   const { id } = await params
 
   const adminClient = createAdminClient()
-  const { error } = await adminClient.from("comments").delete().eq("id", id)
+  const { error } = await adminClient.from("professors").delete().eq("id", id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ success: true })

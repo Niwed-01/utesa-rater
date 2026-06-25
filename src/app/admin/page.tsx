@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { Flag, Users as UsersIcon, MessageSquare, FileText } from "lucide-react"
+import { Flag, Users as UsersIcon, MessageSquare, FileText, Download } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
@@ -86,6 +86,19 @@ export default async function AdminDashboard() {
             </div>
           )
         })}
+      </div>
+
+      {/* Export buttons */}
+      <div className="flex flex-wrap gap-3">
+        <a href="/api/admin/export/users" className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-white hover:border-blue-500/30 transition-all">
+          <Download className="h-4 w-4 text-blue-500" /> Exportar usuarios (CSV)
+        </a>
+        <a href="/api/admin/export/posts" className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-white hover:border-emerald-500/30 transition-all">
+          <Download className="h-4 w-4 text-emerald-500" /> Exportar reseñas (CSV)
+        </a>
+        <a href="/api/admin/export/reports" className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-white hover:border-amber-500/30 transition-all">
+          <Download className="h-4 w-4 text-amber-500" /> Exportar reportes (CSV)
+        </a>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -5,7 +5,8 @@ import { requireAdmin } from "@/lib/auth"
 import { z } from "zod"
 
 const schema = z.object({
-  is_hidden: z.boolean(),
+  is_hidden: z.boolean().optional(),
+  body: z.string().min(10).max(3000).optional(),
 })
 
 export async function PATCH(
@@ -25,13 +26,13 @@ export async function PATCH(
   const supabase = await createClient()
   const { error } = await supabase
     .from("posts")
-    .update({ is_hidden: parsed.data.is_hidden })
+    .update({
+      ...(parsed.data.is_hidden !== undefined && { is_hidden: parsed.data.is_hidden }),
+      ...(parsed.data.body !== undefined && { body: parsed.data.body }),
+    })
     .eq("id", id)
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })
 }
 
@@ -45,14 +46,8 @@ export async function DELETE(
   const { id } = await params
 
   const adminClient = createAdminClient()
-  const { error } = await adminClient
-    .from("posts")
-    .delete()
-    .eq("id", id)
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
+  const { error } = await adminClient.from("posts").delete().eq("id", id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ success: true })
 }

@@ -270,7 +270,11 @@ do $$ begin
   drop policy if exists "delete_own_comment" on comments;
   drop policy if exists "admin_moderate_comment" on comments;
   drop policy if exists "admin_delete_professors" on professors;
+  drop policy if exists "admin_update_professors" on professors;
+  drop policy if exists "admin_insert_professors" on professors;
   drop policy if exists "admin_delete_classes" on classes;
+  drop policy if exists "admin_update_classes" on classes;
+  drop policy if exists "admin_insert_classes" on classes;
   drop policy if exists "admin_delete_reports" on reports;
   drop policy if exists "admin_delete_posts" on posts;
   drop policy if exists "admin_delete_comments" on comments;
@@ -326,8 +330,16 @@ create policy "admin_moderate_comment" on comments for update
 
 create policy "admin_delete_professors" on professors for delete
   using (public.is_admin());
+create policy "admin_update_professors" on professors for update
+  using (public.is_admin());
+create policy "admin_insert_professors" on professors for insert
+  with check (public.is_admin());
 create policy "admin_delete_classes" on classes for delete
   using (public.is_admin());
+create policy "admin_update_classes" on classes for update
+  using (public.is_admin());
+create policy "admin_insert_classes" on classes for insert
+  with check (public.is_admin());
 create policy "admin_delete_reports" on reports for delete
   using (public.is_admin());
 create policy "admin_delete_posts" on posts for delete

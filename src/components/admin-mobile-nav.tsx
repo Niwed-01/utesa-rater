@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, X, LayoutDashboard, Flag, Users, FileText, MessageSquare, ChevronLeft } from "lucide-react"
+import { Menu, X, LayoutDashboard, Flag, Users, FileText, MessageSquare, GraduationCap, BookOpen, ChevronLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const links = [
@@ -12,6 +12,8 @@ const links = [
   { name: "Usuarios", href: "/admin/usuarios", icon: Users },
   { name: "Reseñas", href: "/admin/resenas", icon: FileText },
   { name: "Comentarios", href: "/admin/comentarios", icon: MessageSquare },
+  { name: "Profesores", href: "/admin/profesores", icon: GraduationCap },
+  { name: "Materias", href: "/admin/materias", icon: BookOpen },
 ]
 
 export function AdminMobileNav() {
