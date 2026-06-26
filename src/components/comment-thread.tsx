@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { VoteButtons } from "@/components/vote-buttons"
 import { ReportButton } from "@/components/report-button"
 import { useVote } from "@/hooks/use-vote"
+import { createClient } from "@/lib/supabase/client"
 
 interface Comment {
   id: string
@@ -27,10 +28,22 @@ export function CommentThread({ postId, initialComments = [] }: CommentThreadPro
   const [replyBody, setReplyBody] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isGuest, setIsGuest] = useState(true)
   const { vote } = useVote()
+  const fetchedRef = useRef(false)
+  const guestChecked = useRef(false)
 
   useEffect(() => {
-    if (comments.length > 0) return
+    if (guestChecked.current) return
+    guestChecked.current = true
+    createClient().auth.getUser().then(({ data: { user } }) => {
+      setIsGuest(!user)
+    })
+  }, [])
+
+  useEffect(() => {
+    if (fetchedRef.current) return
+    fetchedRef.current = true
     let cancelled = false
     setFetching(true)
     fetch(`/api/comments?post_id=${postId}`)
@@ -39,7 +52,7 @@ export function CommentThread({ postId, initialComments = [] }: CommentThreadPro
       .catch(() => {})
       .finally(() => { if (!cancelled) setFetching(false) })
     return () => { cancelled = true }
-  }, [postId, comments.length])
+  }, [postId])
 
   const submitReply = useCallback(async (parentId: string | null) => {
     if (!replyBody.trim()) return
@@ -89,6 +102,7 @@ export function CommentThread({ postId, initialComments = [] }: CommentThreadPro
         submitting={submitting}
         error={error}
         depth={0}
+        isGuest={isGuest}
         onReply={setReplyingTo}
         onChangeReply={setReplyBody}
         onSubmit={submitReply}
@@ -96,8 +110,11 @@ export function CommentThread({ postId, initialComments = [] }: CommentThreadPro
       />
 
       <div className="pt-2 border-t border-border">
-        <p className="mb-2 text-xs font-medium text-muted-foreground">Dejar un comentario</p>
-        {replyingTo ? (
+        {isGuest ? (
+          <p className="text-xs text-muted-foreground">
+            <a href="/login" className="text-primary hover:underline">Inicia sesión</a> para dejar un comentario
+          </p>
+        ) : replyingTo ? (
           <p className="text-xs text-muted-foreground">
             Escribiendo respuesta...{' '}
             <button type="button" onClick={() => { setReplyingTo(null); setReplyBody(""); setError(null) }} className="underline hover:text-foreground">
@@ -137,6 +154,7 @@ function CommentNode({
   submitting,
   error,
   depth,
+  isGuest,
   onReply,
   onChangeReply,
   onSubmit,
@@ -150,6 +168,7 @@ function CommentNode({
   submitting: boolean
   error: string | null
   depth: number
+  isGuest: boolean
   onReply: (id: string | null) => void
   onChangeReply: (v: string) => void
   onSubmit: (parentId: string | null) => void
@@ -188,19 +207,21 @@ function CommentNode({
                   <ReportButton commentId={comment.id} size="sm" />
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (isReplying) {
-                    onReply(null); onChangeReply("")
-                  } else {
-                    onReply(comment.id)
-                  }
-                }}
-                className="mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {isReplying ? "Cancelar" : "Responder"}
-              </button>
+              {!isGuest && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isReplying) {
+                      onReply(null); onChangeReply("")
+                    } else {
+                      onReply(comment.id)
+                    }
+                  }}
+                  className="mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {isReplying ? "Cancelar" : "Responder"}
+                </button>
+              )}
             </div>
 
             {isReplying && (
@@ -234,22 +255,23 @@ function CommentNode({
             )}
 
             {/* Nested replies visible by default */}
-            {childReplies.length > 0 && (
-              <CommentNode
-                comments={childReplies}
-                allComments={allComments}
-                getReplies={getReplies}
-                replyingTo={replyingTo}
-                replyBody={replyBody}
-                submitting={submitting}
-                error={error}
-                depth={depth + 1}
-                onReply={onReply}
-                onChangeReply={onChangeReply}
-                onSubmit={onSubmit}
-                onVote={onVote}
-              />
-            )}
+              {childReplies.length > 0 && (
+                <CommentNode
+                  comments={childReplies}
+                  allComments={allComments}
+                  getReplies={getReplies}
+                  replyingTo={replyingTo}
+                  replyBody={replyBody}
+                  submitting={submitting}
+                  error={error}
+                  depth={depth + 1}
+                  isGuest={isGuest}
+                  onReply={onReply}
+                  onChangeReply={onChangeReply}
+                  onSubmit={onSubmit}
+                  onVote={onVote}
+                />
+              )}
           </div>
         )
       })}

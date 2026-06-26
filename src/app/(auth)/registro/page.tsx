@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { registroSchema } from "@/lib/validations"
 import { Button } from "@/components/ui/button"
@@ -16,10 +17,21 @@ import {
 } from "@/components/ui/card"
 
 export default function RegistroPage() {
+  const router = useRouter()
   const supabase = createClient()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        router.push("/")
+      } else {
+        setLoading(false)
+      }
+    })
+  }, [router, supabase])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -45,7 +57,7 @@ export default function RegistroPage() {
       email: result.data.email,
       password: result.data.password,
       options: {
-        emailRedirectTo: "https://utesa-rater.vercel.app/auth/callback",
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`,
       },
     })
 
@@ -62,6 +74,8 @@ export default function RegistroPage() {
     setSuccess("Registro exitoso. Revisa tu correo para confirmar la cuenta.")
     setLoading(false)
   }
+
+  if (loading) return null
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center">

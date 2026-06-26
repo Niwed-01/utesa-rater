@@ -1,19 +1,39 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Menu, X, GraduationCap, PenTool, Users, Bookmark, LogOut, LogIn, UserPlus, User as UserIcon, Shield } from "lucide-react"
 import type { User } from "@supabase/supabase-js"
+import { createClient } from "@/lib/supabase/client"
 
 interface NavbarProps {
   user: User | null
   isAdmin?: boolean
 }
 
-export function Navbar({ user, isAdmin = false }: NavbarProps) {
+export function Navbar({ user: initialUser, isAdmin: initialIsAdmin = false }: NavbarProps) {
+  const [user, setUser] = useState<User | null>(initialUser)
+  const [isAdmin, setIsAdmin] = useState(initialIsAdmin)
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
+
+  useEffect(() => {
+    const supabase = createClient()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      setIsAdmin(false)
+      if (session?.user) {
+        (async () => {
+          try {
+            const { data } = await supabase.from("profiles").select("is_admin").eq("id", session.user.id).single()
+            setIsAdmin(data?.is_admin ?? false)
+          } catch { /* ignore */ }
+        })()
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   const navItems = [
     { name: "Inicio", href: "/", icon: GraduationCap },

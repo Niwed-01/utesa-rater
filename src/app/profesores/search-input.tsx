@@ -21,7 +21,7 @@ export function SearchInput({ careers }: SearchInputProps) {
   }
 
   return (
-    <form action={handleSearch} className="flex flex-col sm:flex-row gap-3">
+    <form onSubmit={(e) => { e.preventDefault(); handleSearch(new FormData(e.currentTarget)) }} className="flex flex-col sm:flex-row gap-3">
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <input
@@ -36,7 +36,10 @@ export function SearchInput({ careers }: SearchInputProps) {
         defaultValue={searchParams.get("career") ?? ""}
         onChange={(e) => {
           const form = e.target.form
-          if (form) form.requestSubmit()
+          if (form) {
+            if (typeof form.requestSubmit === "function") form.requestSubmit()
+            else form.submit()
+          }
         }}
         className="h-10 rounded-xl border border-input bg-card px-4 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
       >

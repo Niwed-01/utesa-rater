@@ -38,7 +38,7 @@ export function useProfessors(search?: string, careerId?: string) {
             .eq("professor_id", prof.id)
           return {
             ...prof,
-            careerNames: careers?.map((c) => c.careers?.name).filter(Boolean) as string[] ?? [],
+            careerNames: careers?.map((c) => c.careers?.name).filter((n): n is string => n != null) ?? [],
           }
         })
       )
@@ -67,7 +67,7 @@ export function useProfessor(id: string) {
 
       return {
         ...professor,
-        careerNames: careers?.map((c) => c.careers?.name).filter(Boolean) as string[] ?? [],
+        careerNames: careers?.map((c) => c.careers?.name).filter((n): n is string => n != null) ?? [],
       }
     },
     enabled: !!id,

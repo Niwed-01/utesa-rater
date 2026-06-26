@@ -53,7 +53,8 @@ export default function AdminReportsPage() {
     try {
       const res = await fetch("/api/admin/reports")
       if (res.ok) setReports(await res.json())
-    } catch { /* ignore */ } finally {
+      else setError("Error al cargar reportes")
+    } catch { setError("Error de conexión") } finally {
       setLoading(false)
     }
   }, [])
@@ -72,7 +73,7 @@ export default function AdminReportsPage() {
       })
       await fetchReports()
     } finally {
-      setActionLoading(null)
+      setActionLoading(prev => prev === `status-${id}` ? null : prev)
     }
   }
 
@@ -86,7 +87,7 @@ export default function AdminReportsPage() {
       })
       await fetchReports()
     } finally {
-      setActionLoading(null)
+      setActionLoading(prev => prev === `hide-${type}-${id}` ? null : prev)
     }
   }
 
@@ -107,7 +108,7 @@ export default function AdminReportsPage() {
         await fetchReports()
       }
     } finally {
-      setActionLoading(null)
+      setActionLoading(prev => prev === `delete-${type}-${id}` ? null : prev)
     }
   }
 
@@ -136,7 +137,7 @@ export default function AdminReportsPage() {
       })
       if (!res.ok) { const err = await res.json(); setError(err.error || "Error") }
       else { setEditContent(null); await fetchReports() }
-    } finally { setActionLoading(null) }
+    } finally { setActionLoading(prev => prev === `edit-${editContent.id}` ? null : prev) }
   }
 
   if (loading) {

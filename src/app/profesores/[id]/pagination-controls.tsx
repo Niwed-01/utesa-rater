@@ -31,7 +31,7 @@ export function PaginationControls({ currentPage, totalPages, basePath }: Pagina
       )}
       {pages.map((page, i) =>
         page === "..." ? (
-          <span key={`ellipsis-${i}`} className="text-xs text-muted-foreground">...</span>
+          <span key={`ellipsis-${pages.length}-${i}`} className="text-xs text-muted-foreground">...</span>
         ) : (
           <Link
             key={page}

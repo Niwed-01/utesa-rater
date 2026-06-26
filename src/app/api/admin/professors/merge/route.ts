@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
   const { error: postsErr } = await supabase
     .from("posts")
-    .update({ professor_id: target_id } as never)
+    .update({ professor_id: target_id })
     .eq("professor_id", source_id)
   if (postsErr) return NextResponse.json({ error: postsErr.message }, { status: 500 })
 
@@ -71,13 +71,13 @@ export async function POST(request: Request) {
 
   const { error: pcErr } = await supabase
     .from("professor_classes")
-    .update({ professor_id: target_id } as never)
+    .update({ professor_id: target_id })
     .eq("professor_id", source_id)
   if (pcErr) return NextResponse.json({ error: pcErr.message }, { status: 500 })
 
   const { error: pcareersErr } = await supabase
     .from("professor_careers")
-    .update({ professor_id: target_id } as never)
+    .update({ professor_id: target_id })
     .eq("professor_id", source_id)
   if (pcareersErr) return NextResponse.json({ error: pcareersErr.message }, { status: 500 })
 

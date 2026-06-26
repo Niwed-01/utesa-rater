@@ -17,7 +17,8 @@ interface HistoryData {
   votes: Array<{ id: string; post_id: string | null; comment_id: string | null; value: number; created_at: string }>
 }
 
-function maskEmail(email: string): string {
+function maskEmail(email: string | null): string {
+  if (!email) return "---"
   const [local, domain] = email.split("@")
   if (!domain) return email
   const maskedLocal = local.length <= 2 ? local[0] + "*" : local[0] + "***" + local[local.length - 1]
@@ -41,7 +42,8 @@ export default function AdminUsersPage() {
     try {
       const res = await fetch("/api/admin/users")
       if (res.ok) setUsers(await res.json())
-    } catch { /* ignore */ } finally {
+      else setError("Error al cargar usuarios")
+    } catch { setError("Error de conexión") } finally {
       setLoading(false)
     }
   }, [])
@@ -63,17 +65,20 @@ export default function AdminUsersPage() {
     try {
       const res = await fetch(`/api/admin/users/${u.id}/history`)
       if (res.ok) setHistoryData(await res.json())
-    } catch { /* ignore */ } finally {
+      else setError("Error al cargar historial")
+    } catch { setError("Error de conexión") } finally {
       setHistoryLoading(false)
     }
   }
 
   async function toggleBan(id: string, current: boolean) {
     setActionLoading(`ban-${id}`)
+    setError(null)
     try {
-      await fetch(`/api/admin/users/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ is_banned: !current }) })
-      await fetchUsers()
-    } finally { setActionLoading(null) }
+      const res = await fetch(`/api/admin/users/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ is_banned: !current }) })
+      if (!res.ok) { const err = await res.json(); setError(err.error || "Error") }
+      else await fetchUsers()
+    } finally { setActionLoading(prev => prev === `ban-${id}` ? null : prev) }
   }
 
   async function toggleAdmin(id: string, current: boolean) {
@@ -82,7 +87,7 @@ export default function AdminUsersPage() {
       const res = await fetch(`/api/admin/users/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ is_admin: !current }) })
       if (!res.ok) { const err = await res.json(); setError(err.error || "Error") }
       else await fetchUsers()
-    } finally { setActionLoading(null) }
+    } finally { setActionLoading(prev => prev === `admin-${id}` ? null : prev) }
   }
 
   async function deleteUser(id: string) {
@@ -92,7 +97,7 @@ export default function AdminUsersPage() {
       const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" })
       if (!res.ok) { const err = await res.json(); setError(err.error || "Error") }
       else await fetchUsers()
-    } finally { setActionLoading(null) }
+    } finally { setActionLoading(prev => prev === `delete-${id}` ? null : prev) }
   }
 
   if (loading) {

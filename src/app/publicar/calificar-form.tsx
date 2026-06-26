@@ -81,22 +81,28 @@ export function CalificarForm() {
 
     setLoading(true)
 
-    const res = await fetch("/api/posts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(parsed.data),
-    })
+    try {
+      const res = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parsed.data),
+      })
 
-    if (!res.ok) {
-      const err = await res.json()
-      if (err.details) setFieldErrors(err.details)
-      setError(err.error || "Error al publicar")
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        if (err.details) setFieldErrors(err.details)
+        setError(err.error || "Error al publicar")
+        setLoading(false)
+        return
+      }
+
+      const data = await res.json()
+      setSuccess(data.id)
+    } catch {
+      setError("Error de conexión. Intenta de nuevo.")
       setLoading(false)
       return
     }
-
-    const data = await res.json()
-    setSuccess(data.id)
   }
 
   function resetForm() {

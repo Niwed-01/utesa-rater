@@ -19,8 +19,10 @@ export function MateriaSelector({ onSelect }: MateriaSelectorProps) {
     if (materiaInput.length < 2 || selectedClase) { setClassResults([]); return }
     clearTimeout(classTimeoutRef.current)
     classTimeoutRef.current = setTimeout(async () => {
-      const res = await fetch(`/api/classes/search?q=${encodeURIComponent(materiaInput)}`)
-      if (res.ok) setClassResults(await res.json())
+      try {
+        const res = await fetch(`/api/classes/search?q=${encodeURIComponent(materiaInput)}`)
+        if (res.ok) setClassResults(await res.json())
+      } catch { /* ignore network errors */ }
     }, 300)
     return () => clearTimeout(classTimeoutRef.current)
   }, [materiaInput, selectedClase])

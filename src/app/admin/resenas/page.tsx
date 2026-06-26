@@ -28,7 +28,8 @@ export default function AdminResenasPage() {
     try {
       const res = await fetch("/api/admin/posts")
       if (res.ok) setPosts(await res.json())
-    } catch { /* ignore */ } finally {
+      else setError("Error al cargar reseñas")
+    } catch { setError("Error de conexión") } finally {
       setLoading(false)
     }
   }, [])
@@ -70,7 +71,7 @@ export default function AdminResenasPage() {
       })
       if (!res.ok) { const err = await res.json(); setError(err.error || "Error") }
       else { setSelected(new Set()); await fetchPosts() }
-    } finally { setActionLoading(null) }
+    } finally { setActionLoading(prev => prev === "batch" ? null : prev) }
   }
 
   async function toggleHide(id: string, current: boolean) {
@@ -82,7 +83,7 @@ export default function AdminResenasPage() {
         body: JSON.stringify({ is_hidden: !current }),
       })
       await fetchPosts()
-    } finally { setActionLoading(null) }
+    } finally { setActionLoading(prev => prev === `hide-${id}` ? null : prev) }
   }
 
   async function deletePost(id: string) {
@@ -93,7 +94,7 @@ export default function AdminResenasPage() {
       const res = await fetch(`/api/admin/posts/${id}`, { method: "DELETE" })
       if (!res.ok) { const err = await res.json(); setError(err.error || "Error") }
       else await fetchPosts()
-    } finally { setActionLoading(null) }
+    } finally { setActionLoading(prev => prev === `delete-${id}` ? null : prev) }
   }
 
   async function saveEdit(e: React.FormEvent) {
@@ -109,7 +110,7 @@ export default function AdminResenasPage() {
       })
       if (!res.ok) { const err = await res.json(); setError(err.error || "Error") }
       else { setEditPost(null); await fetchPosts() }
-    } finally { setActionLoading(null) }
+    } finally { setActionLoading(prev => prev === `edit-${editPost.id}` ? null : prev) }
   }
 
   if (loading) {

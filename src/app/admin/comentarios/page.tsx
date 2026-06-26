@@ -28,7 +28,8 @@ export default function AdminComentariosPage() {
     try {
       const res = await fetch("/api/admin/comments")
       if (res.ok) setComments(await res.json())
-    } catch { /* ignore */ } finally {
+      else setError("Error al cargar comentarios")
+    } catch { setError("Error de conexión") } finally {
       setLoading(false)
     }
   }, [])
@@ -82,7 +83,7 @@ export default function AdminComentariosPage() {
         body: JSON.stringify({ is_hidden: !current }),
       })
       await fetchComments()
-    } finally { setActionLoading(null) }
+    } finally { setActionLoading(prev => prev === `hide-${id}` ? null : prev) }
   }
 
   async function deleteComment(id: string) {
@@ -92,7 +93,7 @@ export default function AdminComentariosPage() {
       const res = await fetch(`/api/admin/comments/${id}`, { method: "DELETE" })
       if (!res.ok) { const err = await res.json(); setError(err.error || "Error") }
       else await fetchComments()
-    } finally { setActionLoading(null) }
+    } finally { setActionLoading(prev => prev === `delete-${id}` ? null : prev) }
   }
 
   async function saveEdit(e: React.FormEvent) {
@@ -107,7 +108,7 @@ export default function AdminComentariosPage() {
       })
       if (!res.ok) { const err = await res.json(); setError(err.error || "Error") }
       else { setEditComment(null); await fetchComments() }
-    } finally { setActionLoading(null) }
+    } finally { setActionLoading(prev => prev === `edit-${editComment.id}` ? null : prev) }
   }
 
   if (loading) {

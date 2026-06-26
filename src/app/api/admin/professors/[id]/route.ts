@@ -10,12 +10,12 @@ const patchSchema = z.object({
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: { id: string } },
 ) {
   const auth = await requireAdmin()
   if (auth.response) return auth.response
 
-  const { id } = await params
+  const { id } = params
   const body = await request.json()
   const parsed = patchSchema.safeParse(body)
   if (!parsed.success) {
@@ -37,12 +37,12 @@ export async function PATCH(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: { id: string } },
 ) {
   const auth = await requireAdmin()
   if (auth.response) return auth.response
 
-  const { id } = await params
+  const { id } = params
 
   const supabase = await createClient()
   const { error } = await supabase.from("professors").delete().eq("id", id)

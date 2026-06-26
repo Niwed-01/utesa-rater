@@ -28,7 +28,8 @@ export default function AdminProfesoresPage() {
     try {
       const res = await fetch("/api/admin/professors")
       if (res.ok) setProfessors(await res.json())
-    } catch { /* ignore */ } finally {
+      else setError("Error al cargar profesores")
+    } catch { setError("Error de conexión") } finally {
       setLoading(false)
     }
   }, [])
@@ -67,7 +68,7 @@ export default function AdminProfesoresPage() {
         await fetchProfessors()
       }
     } finally {
-      setActionLoading(null)
+      setActionLoading(prev => prev === "save" ? null : prev)
     }
   }
 
@@ -88,7 +89,7 @@ export default function AdminProfesoresPage() {
         await fetchProfessors()
       }
     } finally {
-      setActionLoading(null)
+      setActionLoading(prev => prev === `del-${id}` ? null : prev)
     }
   }
 
@@ -112,7 +113,7 @@ export default function AdminProfesoresPage() {
         await fetchProfessors()
       }
     } finally {
-      setActionLoading(null)
+      setActionLoading(prev => prev === "merge" ? null : prev)
     }
   }
 

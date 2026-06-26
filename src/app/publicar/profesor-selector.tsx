@@ -35,8 +35,10 @@ export function ProfesorSelector({ onSelect, onError }: ProfesorSelectorProps) {
     if (query.length < 2) { setResults([]); return }
     clearTimeout(timeoutRef.current)
     timeoutRef.current = setTimeout(async () => {
-      const res = await fetch(`/api/professors/search?q=${encodeURIComponent(query)}`)
-      if (res.ok) { setResults(await res.json()); setShowResults(true) }
+      try {
+        const res = await fetch(`/api/professors/search?q=${encodeURIComponent(query)}`)
+        if (res.ok) { setResults(await res.json()); setShowResults(true) }
+      } catch { /* ignore network errors */ }
     }, 300)
     return () => clearTimeout(timeoutRef.current)
   }, [query])
@@ -118,7 +120,7 @@ export function ProfesorSelector({ onSelect, onError }: ProfesorSelectorProps) {
                 className="max-h-48 overflow-y-auto rounded-xl border border-input bg-card p-2"
                 onClick={() => {
                   if (careers.length === 0) {
-                    fetch("/api/careers").then((r) => r.ok && r.json()).then(setCareers)
+                    fetch("/api/careers").then((r) => r.ok && r.json()).then(setCareers).catch(() => {})
                   }
                 }}
               >
@@ -199,7 +201,8 @@ export function ProfesorConfirmado({ profesor, onChange, onUpdate }: ProfesorCon
     setSelectedCareerIds(profesor.careers.map((c) => c.id))
     fetch("/api/careers")
       .then((r) => r.ok && r.json())
-      .then((data) => { setCareers(data); setEditing(true) })
+      .then((data) => { if (data) { setCareers(data); setEditing(true) } })
+      .catch(() => {})
       .finally(() => setLoadingCareers(false))
   }
 
@@ -302,7 +305,7 @@ export function ProfesorConfirmado({ profesor, onChange, onUpdate }: ProfesorCon
                 </Button>
                 <button
                   type="button"
-                  onClick={() => setEditing(false)}
+                  onClick={() => { setEditing(false); setSelectedCareerIds(profesor.careers.map((c) => c.id)) }}
                   className="text-xs text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Cancelar

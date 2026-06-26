@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { ProfessorCard } from "@/components/professor-card"
 import { GraduationCap } from "lucide-react"
@@ -51,7 +52,7 @@ export default async function ProfesoresPage({ searchParams }: PageProps) {
             .eq("professor_id", prof.id)
           return {
             ...prof,
-            careerNames: profCareers?.map((c) => c.careers?.name).filter(Boolean) as string[] ?? [],
+            careerNames: profCareers?.map((c) => c.careers?.name).filter((n): n is string => n != null) ?? [],
           }
         })
       )
@@ -107,7 +108,9 @@ export default async function ProfesoresPage({ searchParams }: PageProps) {
       </div>
 
       {/* Search + Filter */}
-      <SearchInput careers={careers ?? []} />
+      <Suspense fallback={<div className="h-10 rounded-xl bg-muted/50 animate-pulse" />}>
+        <SearchInput careers={careers ?? []} />
+      </Suspense>
 
       {/* Results */}
       {professorsWithCareers.length > 0 ? (
@@ -127,7 +130,9 @@ export default async function ProfesoresPage({ searchParams }: PageProps) {
           <p className="text-muted-foreground">
             {searchParams.q
               ? `No se encontraron profesores para "${searchParams.q}"`
-              : "Aún no hay profesores registrados"}
+              : searchParams.career
+                ? "No se encontraron profesores para la carrera seleccionada"
+                : "Aún no hay profesores registrados"}
           </p>
           <a
             href="/publicar"

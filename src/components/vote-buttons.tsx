@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
+import { createClient } from "@/lib/supabase/client"
 
 interface VoteButtonsProps {
   score: number
@@ -12,9 +13,19 @@ interface VoteButtonsProps {
 export function VoteButtons({ score, userVote, onVote }: VoteButtonsProps) {
   const [optimisticScore, setOptimisticScore] = useState(score)
   const [optimisticVote, setOptimisticVote] = useState(userVote)
-  const prevState = useRef({ score, vote: userVote })
+  const [isGuest, setIsGuest] = useState(true)
+  const guestChecked = useRef(false)
+
+  useEffect(() => {
+    if (guestChecked.current) return
+    guestChecked.current = true
+    createClient().auth.getUser().then(({ data: { user } }) => {
+      setIsGuest(!user)
+    })
+  }, [])
 
   async function handleVote(value: number) {
+    if (isGuest) return
     const prevVote = optimisticVote
     const prevScore = optimisticScore
 
@@ -37,7 +48,6 @@ export function VoteButtons({ score, userVote, onVote }: VoteButtonsProps) {
 
     try {
       await onVote(value)
-      prevState.current = { score: newScore, vote: newVote }
     } catch {
       setOptimisticVote(prevVote)
       setOptimisticScore(prevScore)

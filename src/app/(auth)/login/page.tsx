@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { loginSchema } from "@/lib/validations"
@@ -20,7 +20,17 @@ export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
   const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        router.push("/")
+      } else {
+        setLoading(false)
+      }
+    })
+  }, [router, supabase])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -53,6 +63,8 @@ export default function LoginPage() {
     router.push("/")
     router.refresh()
   }
+
+  if (loading) return null
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
@@ -97,12 +109,30 @@ export default function LoginPage() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Entrando..." : "Entrar"}
             </Button>
-            <p className="text-xs text-muted-foreground">
-              ¿No tienes cuenta?{" "}
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
               <a href="/registro" className="text-primary hover:underline">
-                Regístrate
+                ¿No tienes cuenta? Regístrate
               </a>
-            </p>
+              <span className="hidden sm:inline">·</span>
+              <button
+                type="button"
+                onClick={async () => {
+                  const email = (document.getElementById("email") as HTMLInputElement)?.value
+                  if (!email?.includes("@")) { setError("Ingresa tu correo primero"); return }
+                  setLoading(true)
+                  setError(null)
+                  const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: `${window.location.origin}/login`,
+                  })
+                  setLoading(false)
+                  if (resetError) setError(resetError.message)
+                  else setError("Revisa tu correo para restablecer la contraseña")
+                }}
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+            </div>
           </CardFooter>
         </form>
       </Card>

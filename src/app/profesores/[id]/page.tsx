@@ -39,7 +39,7 @@ export default async function ProfessorPage({ params, searchParams }: PageProps)
   const professor = professorResult.data
   if (!professor) notFound()
 
-  const careerNames = careersResult.data?.map((c) => c.careers?.name).filter(Boolean) as string[] ?? []
+  const careerNames = careersResult.data?.map((c) => c.careers?.name).filter((n): n is string => n != null) ?? []
 
   const [{ data: posts }, { count: totalPosts }] = await Promise.all([
     supabase

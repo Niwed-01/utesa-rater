@@ -9,12 +9,12 @@ const schema = z.object({
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: { id: string } },
 ) {
   const auth = await requireAdmin()
   if (auth.response) return auth.response
 
-  const { id } = await params
+  const { id } = params
   const body = await request.json()
   const parsed = schema.safeParse(body)
   if (!parsed.success) {

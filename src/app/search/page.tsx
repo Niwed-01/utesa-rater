@@ -70,7 +70,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
         .eq("professor_id", prof.id)
       return {
         ...prof,
-        careerNames: careers?.map((c) => c.careers?.name).filter(Boolean) as string[] ?? [],
+        careerNames: careers?.map((c) => c.careers?.name).filter((n): n is string => n != null) ?? [],
       }
     })
   )

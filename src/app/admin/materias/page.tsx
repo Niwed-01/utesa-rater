@@ -25,7 +25,8 @@ export default function AdminMateriasPage() {
     try {
       const res = await fetch("/api/admin/classes")
       if (res.ok) setClasses(await res.json())
-    } catch { /* ignore */ } finally {
+      else setError("Error al cargar materias")
+    } catch { setError("Error de conexión") } finally {
       setLoading(false)
     }
   }, [])
@@ -61,7 +62,7 @@ export default function AdminMateriasPage() {
         setShowForm(false); setEditing(null); setFormName(""); setFormCode("")
         await fetchClasses()
       }
-    } finally { setActionLoading(null) }
+    } finally { setActionLoading(prev => prev === "save" ? null : prev) }
   }
 
   function startEdit(c: Class) {
@@ -75,7 +76,7 @@ export default function AdminMateriasPage() {
       const res = await fetch(`/api/admin/classes/${id}`, { method: "DELETE" })
       if (!res.ok) { const err = await res.json(); setError(err.error || "Error") }
       else { await fetchClasses() }
-    } finally { setActionLoading(null) }
+    } finally { setActionLoading(prev => prev === `del-${id}` ? null : prev) }
   }
 
   if (loading) {

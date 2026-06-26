@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
+import { createClient } from "@/lib/supabase/client"
 
 interface ReportButtonProps {
   postId?: string
@@ -15,6 +16,22 @@ export function ReportButton({ postId, commentId, size = "md" }: ReportButtonPro
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isGuest, setIsGuest] = useState(true)
+  const guestChecked = useRef(false)
+
+  useEffect(() => {
+    if (guestChecked.current) return
+    guestChecked.current = true
+    createClient().auth.getUser().then(({ data: { user } }) => {
+      setIsGuest(!user)
+    })
+  }, [])
+
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>()
+
+  useEffect(() => {
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current) }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -40,13 +57,15 @@ export function ReportButton({ postId, commentId, size = "md" }: ReportButtonPro
       }
 
       setDone(true)
-      setTimeout(() => { setOpen(false); setDone(false); setReason("") }, 2000)
+      timeoutRef.current = setTimeout(() => { setOpen(false); setDone(false); setReason("") }, 2000)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido")
     } finally {
       setLoading(false)
     }
   }
+
+  if (isGuest) return null
 
   return (
     <>
