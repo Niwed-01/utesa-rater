@@ -2,8 +2,12 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { reportSchema } from "@/lib/validations"
 import { requireUser } from "@/lib/auth"
+import { validateOrigin } from "@/lib/security/csrf"
 
 export async function POST(request: Request) {
+  const originCheck = validateOrigin(request)
+  if (originCheck) return originCheck.error
+
   const auth = await requireUser()
   if (auth.response) return auth.response
   const user = auth.user

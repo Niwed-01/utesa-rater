@@ -16,9 +16,21 @@ export async function GET() {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+function escapeCsv(value: string | boolean | Date | null | undefined): string {
+  if (value == null) return ""
+  const str = String(value)
+  if (str.startsWith("=") || str.startsWith("+") || str.startsWith("-") || str.startsWith("@") || str.startsWith("|")) {
+    return `"'${str}"`
+  }
+  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+    return `"${str.replace(/"/g, '""')}"`
+  }
+  return str
+}
+
   const header = "email,admin,baneado,registrado\n"
   const rows = (data ?? [])
-    .map((u) => `${u.email},${u.is_admin},${u.is_banned},${u.created_at}`)
+    .map((u) => `${escapeCsv(u.email)},${escapeCsv(u.is_admin)},${escapeCsv(u.is_banned)},${escapeCsv(u.created_at)}`)
     .join("\n")
 
   return new NextResponse(header + rows, {

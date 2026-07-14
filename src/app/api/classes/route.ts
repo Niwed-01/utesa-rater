@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { z } from "zod"
 import { requireUser } from "@/lib/auth"
+import { validateOrigin } from "@/lib/security/csrf"
 
 const createSchema = z.object({
   name: z.string().min(1, "Nombre requerido").max(200),
@@ -10,6 +11,9 @@ const createSchema = z.object({
 })
 
 export async function POST(request: Request) {
+  const originCheck = validateOrigin(request)
+  if (originCheck) return originCheck.error
+
   const auth = await requireUser()
   if (auth.response) return auth.response
   const supabase = await createClient()

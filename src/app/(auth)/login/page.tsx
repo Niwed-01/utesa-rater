@@ -121,8 +121,9 @@ export default function LoginPage() {
                   if (!email?.includes("@")) { setError("Ingresa tu correo primero"); return }
                   setLoading(true)
                   setError(null)
-                  const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-                    redirectTo: `${window.location.origin}/login`,
+                  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+              const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: `${siteUrl}/login`,
                   })
                   setLoading(false)
                   if (resetError) setError(resetError.message)

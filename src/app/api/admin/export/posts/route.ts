@@ -16,11 +16,31 @@ export async function GET() {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+function escapeCsv(value: unknown): string {
+  if (value == null) return ""
+  const str = String(value)
+  if (str.startsWith("=") || str.startsWith("+") || str.startsWith("-") || str.startsWith("@") || str.startsWith("|")) {
+    return `"'${str}"`
+  }
+  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+    return `"${str.replace(/"/g, '""')}"`
+  }
+  return str
+}
+
   const header = "alias,profesor,rating_general,votos,oculta,trimestre,fecha\n"
   const rows = (data ?? [])
     .map((p) => {
       const profName = p.professors?.full_name ?? ""
-      return `${p.alias},"${profName}",${p.rating_general},${p.vote_score},${p.is_hidden},${p.semester ?? ""},${p.created_at}`
+      return [
+        escapeCsv(p.alias),
+        escapeCsv(profName),
+        escapeCsv(p.rating_general),
+        escapeCsv(p.vote_score),
+        escapeCsv(p.is_hidden),
+        escapeCsv(p.semester ?? ""),
+        escapeCsv(p.created_at),
+      ].join(",")
     })
     .join("\n")
 

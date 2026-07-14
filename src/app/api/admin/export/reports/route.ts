@@ -16,11 +16,23 @@ export async function GET() {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+function escapeCsv(value: unknown): string {
+  if (value == null) return ""
+  const str = String(value)
+  if (str.startsWith("=") || str.startsWith("+") || str.startsWith("-") || str.startsWith("@") || str.startsWith("|")) {
+    return `"'${str}"`
+  }
+  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+    return `"${str.replace(/"/g, '""')}"`
+  }
+  return str
+}
+
   const header = "motivo,estado,tipo,fecha\n"
   const rows = (data ?? [])
     .map((r) => {
       const tipo = r.post_id ? "reseña" : "comentario"
-      return `"${r.reason.replace(/"/g, '""')}",${r.status},${tipo},${r.created_at}`
+      return `${escapeCsv(r.reason)},${escapeCsv(r.status)},${escapeCsv(tipo)},${escapeCsv(r.created_at)}`
     })
     .join("\n")
 

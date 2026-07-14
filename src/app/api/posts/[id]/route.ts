@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { requireUser } from "@/lib/auth"
+import { validateOrigin } from "@/lib/security/csrf"
 import { z } from "zod"
 
 const patchSchema = z.object({
@@ -10,6 +11,9 @@ const patchSchema = z.object({
 })
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+  const originCheck = validateOrigin(request)
+  if (originCheck) return originCheck.error
+
   const auth = await requireUser()
   if (auth.response) return auth.response
   const user = auth.user
@@ -46,6 +50,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  const originCheck = validateOrigin(request)
+  if (originCheck) return originCheck.error
+
   const auth = await requireUser()
   if (auth.response) return auth.response
   const user = auth.user

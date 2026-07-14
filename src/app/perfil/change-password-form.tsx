@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,7 @@ export function ChangePasswordForm() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const lastAttempt = useRef(0)
   const router = useRouter()
   const supabase = createClient()
 
@@ -22,6 +23,13 @@ export function ChangePasswordForm() {
     e.preventDefault()
     setError("")
     setSuccess(false)
+
+    const now = Date.now()
+    if (now - lastAttempt.current < 3000) {
+      setError("Demasiado rápido. Espera unos segundos.")
+      return
+    }
+    lastAttempt.current = now
 
     if (newPassword.length < 6) {
       setError("La nueva contraseña debe tener al menos 6 caracteres")

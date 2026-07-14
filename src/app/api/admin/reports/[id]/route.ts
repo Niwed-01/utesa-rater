@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { requireAdmin } from "@/lib/auth"
+import { validateOrigin } from "@/lib/security/csrf"
+import { logAudit } from "@/lib/security/audit"
+import type { Json } from "@/types/database.types"
 import { z } from "zod"
 
 const schema = z.object({
@@ -11,6 +14,9 @@ export async function PATCH(
   request: Request,
   { params }: { params: { id: string } },
 ) {
+  const originCheck = validateOrigin(request)
+  if (originCheck) return originCheck.error
+
   const auth = await requireAdmin()
   if (auth.response) return auth.response
 
@@ -30,6 +36,8 @@ export async function PATCH(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  await logAudit(auth.user.id, "admin:update_report", id, { new_status: parsed.data.status } as Json)
 
   return NextResponse.json({ success: true })
 }

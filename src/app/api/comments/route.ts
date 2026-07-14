@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { commentSchema } from "@/lib/validations"
 import { generarAlias } from "@/lib/alias"
 import { requireUser } from "@/lib/auth"
+import { validateOrigin } from "@/lib/security/csrf"
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -27,6 +28,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const originCheck = validateOrigin(request)
+  if (originCheck) return originCheck.error
+
   const auth = await requireUser()
   if (auth.response) return auth.response
   const user = auth.user

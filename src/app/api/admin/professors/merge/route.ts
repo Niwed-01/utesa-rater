@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { requireAdmin } from "@/lib/auth"
+import { validateOrigin } from "@/lib/security/csrf"
+import { logAudit } from "@/lib/security/audit"
+import type { Json } from "@/types/database.types"
 import { z } from "zod"
 
 const schema = z.object({
@@ -9,6 +12,9 @@ const schema = z.object({
 })
 
 export async function POST(request: Request) {
+  const originCheck = validateOrigin(request)
+  if (originCheck) return originCheck.error
+
   const auth = await requireAdmin()
   if (auth.response) return auth.response
 
@@ -83,6 +89,11 @@ export async function POST(request: Request) {
 
   const { error: delErr } = await supabase.from("professors").delete().eq("id", source_id)
   if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 })
+
+  await logAudit(auth.user.id, "admin:merge_professors", source_id, {
+    source_id,
+    target_id,
+  } as unknown as Json)
 
   return NextResponse.json({ success: true })
 }

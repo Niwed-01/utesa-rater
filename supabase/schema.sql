@@ -21,6 +21,12 @@ create or replace function handle_new_user() returns trigger as $$
 begin
   insert into public.profiles (id, email) values (new.id, new.email);
   return new;
+exception
+  when unique_violation then
+    return new;
+  when others then
+    raise warning 'handle_new_user: % %', sqlstate, sqlerrm;
+    return new;
 end;
 $$ language plpgsql security definer;
 
@@ -222,6 +228,38 @@ create table if not exists reports (
 );
 create index if not exists idx_reports_status on reports(status);
 
+-- ------------------------------------------------------------
+-- 10. AUDITORÍA DE ACCIONES ADMIN
+-- ------------------------------------------------------------
+create table if not exists audit_log (
+  id uuid primary key default gen_random_uuid(),
+  admin_id uuid not null references profiles(id) on delete cascade,
+  action text not null,
+  target_id text not null,
+  metadata jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_audit_admin on audit_log(admin_id);
+create index if not exists idx_audit_action on audit_log(action);
+create index if not exists idx_audit_created on audit_log(created_at desc);
+
+-- Solamente admins pueden leer audit_log
+alter table audit_log enable row level security;
+drop policy if exists "admin_select_audit" on audit_log;
+create policy "admin_select_audit" on audit_log for select
+  using (public.is_admin());
+-- Solo el sistema inserta (security definer en el route handler)
+drop policy if exists "service_insert_audit" on audit_log;
+create policy "service_insert_audit" on audit_log for insert
+  with check (public.is_admin());
+
+-- ------------------------------------------------------------
+-- 11. CONSTRAINT: photo_url no puede ser javascript: ni data:
+-- ------------------------------------------------------------
+alter table professors drop constraint if exists safe_photo_url;
+alter table professors add constraint safe_photo_url
+  check (photo_url is null or photo_url !~ '^\s*(javascript|data):');
+
 -- ============================================================
 -- ROW LEVEL SECURITY
 -- ============================================================
@@ -345,6 +383,14 @@ create policy "admin_select_all_comments" on comments for select
 
 grant select on posts_public to anon, authenticated;
 grant select on comments_public to anon, authenticated;
+
+-- Audit log: solo admins pueden leer/insertar
+drop policy if exists "admin_select_audit" on audit_log;
+create policy "admin_select_audit" on audit_log for select
+  using (public.is_admin());
+drop policy if exists "service_insert_audit" on audit_log;
+create policy "service_insert_audit" on audit_log for insert
+  with check (public.is_admin());
 
 -- Comments: mismo patrón que posts
 drop policy if exists "insert_own_comment" on comments;

@@ -19,6 +19,12 @@ create or replace function handle_new_user() returns trigger as $$
 begin
   insert into public.profiles (id, email) values (new.id, new.email);
   return new;
+exception
+  when unique_violation then
+    return new;
+  when others then
+    raise warning 'handle_new_user: % %', sqlstate, sqlerrm;
+    return new;
 end;
 $$ language plpgsql security definer;
 
@@ -221,6 +227,28 @@ create table if not exists reports (
 
 create index if not exists idx_reports_status on reports(status);
 
+-- ------------------------------------------------------------
+-- 10. AUDITORÍA DE ACCIONES ADMIN
+-- ------------------------------------------------------------
+create table if not exists audit_log (
+  id uuid primary key default gen_random_uuid(),
+  admin_id uuid not null references profiles(id) on delete cascade,
+  action text not null,
+  target_id text not null,
+  metadata jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_audit_admin on audit_log(admin_id);
+create index if not exists idx_audit_action on audit_log(action);
+create index if not exists idx_audit_created on audit_log(created_at desc);
+
+-- ------------------------------------------------------------
+-- 11. CONSTRAINT: photo_url segura
+-- ------------------------------------------------------------
+alter table professors drop constraint if exists safe_photo_url;
+alter table professors add constraint safe_photo_url
+  check (photo_url is null or photo_url !~ '^\s*(javascript|data):');
+
 -- ============================================================
 -- ROW LEVEL SECURITY
 -- ============================================================
@@ -292,6 +320,9 @@ do $$ begin
   drop policy if exists "insert_own_report" on reports;
   drop policy if exists "select_own_or_admin_report" on reports;
   drop policy if exists "admin_update_report" on reports;
+  -- Audit log
+  drop policy if exists "admin_select_audit" on audit_log;
+  drop policy if exists "service_insert_audit" on audit_log;
 end $$;
 
 create policy "select_own_profile" on profiles for select using (auth.uid() = id);
@@ -360,6 +391,13 @@ create policy "admin_select_all_comments" on comments for select
 
 grant select on posts_public to anon, authenticated;
 grant select on comments_public to anon, authenticated;
+
+-- Audit log: solo admins pueden leer/insertar
+alter table if exists audit_log enable row level security;
+create policy "admin_select_audit" on audit_log for select
+  using (public.is_admin());
+create policy "service_insert_audit" on audit_log for insert
+  with check (public.is_admin());
 
 create policy "insert_own_comment" on comments for insert with check (auth.uid() = author_id);
 create policy "select_own_comment" on comments for select using (auth.uid() = author_id);
