@@ -7,6 +7,7 @@ const ipStore = new Map<string, RateLimitEntry>()
 const userStore = new Map<string, RateLimitEntry>()
 
 const CLEANUP_INTERVAL = 60_000
+const MAX_STORE_ENTRIES = 10_000
 
 let lastCleanup = Date.now()
 
@@ -14,10 +15,11 @@ function cleanup() {
   const now = Date.now()
   if (now - lastCleanup < CLEANUP_INTERVAL) return
   lastCleanup = now
-  Array.from(ipStore.entries()).forEach(([key, entry]) => {
+
+  ipStore.forEach((entry, key) => {
     if (now > entry.resetAt) ipStore.delete(key)
   })
-  Array.from(userStore.entries()).forEach(([key, entry]) => {
+  userStore.forEach((entry, key) => {
     if (now > entry.resetAt) userStore.delete(key)
   })
 }
@@ -32,6 +34,9 @@ function checkLimit(
   const entry = store.get(key)
 
   if (!entry || now > entry.resetAt) {
+    if (store.size >= MAX_STORE_ENTRIES) {
+      store.clear()
+    }
     store.set(key, { count: 1, resetAt: now + windowMs })
     return true
   }
@@ -62,8 +67,8 @@ export function rateLimitByUser(
 
 export function getRateLimitKey(request: Request): string {
   return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
     request.headers.get("x-real-ip") ??
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
     "unknown"
   )
 }

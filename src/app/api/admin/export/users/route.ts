@@ -14,7 +14,7 @@ export async function GET() {
     .select("email, is_admin, is_banned, created_at")
     .order("created_at", { ascending: false })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
 
 function escapeCsv(value: string | boolean | Date | null | undefined): string {
   if (value == null) return ""

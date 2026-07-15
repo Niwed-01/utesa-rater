@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   const { data, error } = await query.order("name").limit(20)
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 
   return NextResponse.json(data)

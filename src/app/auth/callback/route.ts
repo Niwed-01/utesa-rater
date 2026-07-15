@@ -9,7 +9,6 @@ const ALLOWED_NEXT_PATHS = [
   "/mis-publicaciones",
   "/perfil",
   "/profesores",
-  "/admin",
   "/search",
   "/estudiantes",
 ]

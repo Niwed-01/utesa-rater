@@ -14,7 +14,7 @@ export async function GET() {
     .select("reason, status, created_at, post_id, comment_id")
     .order("created_at", { ascending: false })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
 
 function escapeCsv(value: unknown): string {
   if (value == null) return ""

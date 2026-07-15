@@ -13,10 +13,14 @@ export function validateOrigin(request: Request): { error: NextResponse } | null
 
   const source = origin ?? (referer ? new URL(referer).origin : null)
 
-  if (!source) return null
+  if (!source) {
+    return {
+      error: NextResponse.json({ error: "Origen no permitido" }, { status: 403 }),
+    }
+  }
 
   const isAllowed = ALLOWED_ORIGINS.some(
-    (allowed) => allowed && source.startsWith(allowed),
+    (allowed) => allowed === source,
   )
 
   if (!isAllowed) {

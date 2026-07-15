@@ -24,9 +24,21 @@ const nouns = [
   "Vicuña", "Vizcacha", "Yaguar", "Zorro",
 ]
 
+function secureRandomInt(max: number): number {
+  const buf = new Uint32Array(1)
+  crypto.getRandomValues(buf)
+  return buf[0] % max
+}
+
+function randomHex(length: number): string {
+  const buf = new Uint8Array(length)
+  crypto.getRandomValues(buf)
+  return Array.from(buf, (b) => b.toString(16).padStart(2, "0")).join("")
+}
+
 export function generarAlias(): string {
-  const adj = adjectives[Math.floor(Math.random() * adjectives.length)]
-  const noun = nouns[Math.floor(Math.random() * nouns.length)]
-  const num = Math.floor(Math.random() * 99) + 1
-  return `${adj}${noun}${num}`
+  const adj = adjectives[secureRandomInt(adjectives.length)]
+  const noun = nouns[secureRandomInt(nouns.length)]
+  const suffix = randomHex(2)
+  return `${adj}${noun}${suffix}`
 }

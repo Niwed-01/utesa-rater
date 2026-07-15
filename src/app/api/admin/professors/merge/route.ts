@@ -43,52 +43,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Profesor destino no encontrado" }, { status: 404 })
   }
 
-  const { error: postsErr } = await supabase
-    .from("posts")
-    .update({ professor_id: target_id })
-    .eq("professor_id", source_id)
-  if (postsErr) return NextResponse.json({ error: postsErr.message }, { status: 500 })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error: mergeErr } = await (supabase as any).rpc("merge_professors", {
+    source_id,
+    target_id,
+  })
 
-  const { data: sourceClasses } = await supabase
-    .from("professor_classes")
-    .select("class_id")
-    .eq("professor_id", source_id)
-  if (sourceClasses && sourceClasses.length > 0) {
-    const classIds = sourceClasses.map(c => c.class_id)
-    await supabase
-      .from("professor_classes")
-      .delete()
-      .eq("professor_id", target_id)
-      .in("class_id", classIds)
+  if (mergeErr) {
+    return NextResponse.json({ error: "Error al fusionar profesores" }, { status: 500 })
   }
-
-  const { data: sourceCareers } = await supabase
-    .from("professor_careers")
-    .select("career_id")
-    .eq("professor_id", source_id)
-  if (sourceCareers && sourceCareers.length > 0) {
-    const careerIds = sourceCareers.map(c => c.career_id)
-    await supabase
-      .from("professor_careers")
-      .delete()
-      .eq("professor_id", target_id)
-      .in("career_id", careerIds)
-  }
-
-  const { error: pcErr } = await supabase
-    .from("professor_classes")
-    .update({ professor_id: target_id })
-    .eq("professor_id", source_id)
-  if (pcErr) return NextResponse.json({ error: pcErr.message }, { status: 500 })
-
-  const { error: pcareersErr } = await supabase
-    .from("professor_careers")
-    .update({ professor_id: target_id })
-    .eq("professor_id", source_id)
-  if (pcareersErr) return NextResponse.json({ error: pcareersErr.message }, { status: 500 })
-
-  const { error: delErr } = await supabase.from("professors").delete().eq("id", source_id)
-  if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 })
 
   await logAudit(auth.user.id, "admin:merge_professors", source_id, {
     source_id,

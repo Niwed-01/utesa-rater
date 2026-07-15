@@ -1,9 +1,14 @@
 import { createClient } from "@/lib/supabase/server"
+import { requireAdmin } from "@/lib/auth"
+import { notFound } from "next/navigation"
 import { Flag, Users as UsersIcon, MessageSquare, FileText, Download } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminDashboard() {
+  const auth = await requireAdmin()
+  if (auth.response) notFound()
+
   const supabase = await createClient()
 
   const [

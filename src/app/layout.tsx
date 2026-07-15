@@ -165,7 +165,7 @@ async function Footer() {
             <a
               href="https://nube.utesa.edu"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="p-2 rounded-xl hover:bg-neutral-800/40 hover:text-white transition-all"
             >
               UTESA Virtual (Nube)
@@ -173,7 +173,7 @@ async function Footer() {
             <a
               href="https://utesaplus.utesa.edu"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="p-2 rounded-xl hover:bg-neutral-800/40 hover:text-white transition-all"
             >
               UTESA Plus

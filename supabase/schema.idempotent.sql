@@ -34,7 +34,7 @@ create trigger on_auth_user_created
   for each row execute procedure handle_new_user();
 
 create or replace function public.is_admin() returns boolean
-language sql stable security definer
+language sql stable security definer set search_path = ''
 as $$
   select exists (
     select 1 from public.profiles
@@ -128,7 +128,7 @@ create index if not exists idx_posts_professor on posts(professor_id);
 create index if not exists idx_posts_created on posts(created_at desc);
 
 drop view if exists posts_public;
-create view posts_public with (security_invoker) as
+create view posts_public as
   select id, professor_id, class_id, alias, title, body, tags,
          volveria_a_tomar,
          rating_claridad, rating_puntualidad, rating_exigencia,
@@ -143,6 +143,7 @@ create view posts_public with (security_invoker) as
 create table if not exists comments (
   id uuid primary key default gen_random_uuid(),
   post_id uuid not null references posts(id) on delete cascade,
+  parent_id uuid references comments(id) on delete cascade,
   author_id uuid not null references profiles(id) on delete cascade,
   alias text not null,
   body text not null check (char_length(body) between 1 and 1000),
@@ -152,10 +153,11 @@ create table if not exists comments (
 );
 
 create index if not exists idx_comments_post on comments(post_id);
+create index if not exists idx_comments_parent on comments(parent_id);
 
 drop view if exists comments_public;
-create view comments_public with (security_invoker) as
-  select id, post_id, alias, body, vote_score, created_at
+create view comments_public as
+  select id, post_id, parent_id, alias, body, vote_score, created_at
   from comments
   where is_hidden = false;
 
@@ -200,7 +202,7 @@ begin
 
   return null;
 end;
-$$ language plpgsql;
+$$ language plpgsql security definer set search_path = '';
 
 drop trigger if exists trg_vote_change on votes;
 create trigger trg_vote_change
@@ -226,6 +228,8 @@ create table if not exists reports (
 );
 
 create index if not exists idx_reports_status on reports(status);
+create unique index if not exists uq_report_user_post on reports(reporter_id, post_id) where post_id is not null;
+create unique index if not exists uq_report_user_comment on reports(reporter_id, comment_id) where comment_id is not null;
 
 -- ------------------------------------------------------------
 -- 10. AUDITORÍA DE ACCIONES ADMIN
@@ -243,7 +247,29 @@ create index if not exists idx_audit_action on audit_log(action);
 create index if not exists idx_audit_created on audit_log(created_at desc);
 
 -- ------------------------------------------------------------
--- 11. CONSTRAINT: photo_url segura
+-- 11b. FUNCIÓN SEGURA PARA MERGE DE PROFESORES (transaccional)
+-- ------------------------------------------------------------
+create or replace function merge_professors(source_id uuid, target_id uuid) returns void as $$
+begin
+  update posts set professor_id = target_id where professor_id = source_id;
+  delete from professor_classes pc1
+    using professor_classes pc2
+    where pc2.professor_id = source_id
+      and pc1.professor_id = target_id
+      and pc1.class_id = pc2.class_id;
+  delete from professor_careers pc1
+    using professor_careers pc2
+    where pc2.professor_id = source_id
+      and pc1.professor_id = target_id
+      and pc1.career_id = pc2.career_id;
+  update professor_classes set professor_id = target_id where professor_id = source_id;
+  update professor_careers set professor_id = target_id where professor_id = source_id;
+  delete from professors where id = source_id;
+end;
+$$ language plpgsql security definer set search_path = '';
+
+-- ------------------------------------------------------------
+-- 12. CONSTRAINT: photo_url segura
 -- ------------------------------------------------------------
 alter table professors drop constraint if exists safe_photo_url;
 alter table professors add constraint safe_photo_url
@@ -311,7 +337,6 @@ do $$ begin
   -- Profiles (admin)
   drop policy if exists "admin_select_profiles" on profiles;
   drop policy if exists "admin_update_profile" on profiles;
-  drop function if exists public.is_admin();
   -- Posts (admin)
   drop policy if exists "admin_select_all_posts" on posts;
   -- Comments (admin)
@@ -327,7 +352,12 @@ end $$;
 
 create policy "select_own_profile" on profiles for select using (auth.uid() = id);
 create policy "insert_own_profile" on profiles for insert with check (auth.uid() = id);
-create policy "update_own_profile" on profiles for update using (auth.uid() = id);
+create policy "update_own_profile" on profiles for update using (auth.uid() = id)
+  with check (
+    auth.uid() = id
+    and is_admin = (select is_admin from public.profiles where id = auth.uid())
+    and is_banned = (select is_banned from public.profiles where id = auth.uid())
+  );
 
 create policy "public_read_professors" on professors for select using (true);
 create policy "public_read_classes" on classes for select using (true);
@@ -335,23 +365,14 @@ create policy "public_read_careers" on careers for select using (true);
 create policy "public_read_profcareers" on professor_careers for select using (true);
 create policy "public_read_profclasses" on professor_classes for select using (true);
 
-create policy "authenticated_insert_professors" on professors
-  for insert with check (auth.role() = 'authenticated');
-create policy "authenticated_insert_classes" on classes
-  for insert with check (auth.role() = 'authenticated');
-create policy "authenticated_insert_profclasses" on professor_classes
-  for insert with check (auth.role() = 'authenticated');
-create policy "authenticated_insert_profcareers" on professor_careers
-  for insert with check (auth.role() = 'authenticated');
-
-create policy "authenticated_update_professors" on professors
-  for update using (auth.role() = 'authenticated');
-create policy "authenticated_update_classes" on classes
-  for update using (auth.role() = 'authenticated');
-
 create policy "insert_own_post" on posts for insert with check (auth.uid() = author_id);
 create policy "select_own_post" on posts for select using (auth.uid() = author_id);
-create policy "update_own_post" on posts for update using (auth.uid() = author_id);
+create policy "update_own_post" on posts for update using (auth.uid() = author_id)
+  with check (
+    auth.uid() = author_id
+    and is_hidden = (select p.is_hidden from posts p where p.id = id)
+    and vote_score = (select p.vote_score from posts p where p.id = id)
+  );
 create policy "delete_own_post" on posts for delete using (auth.uid() = author_id);
 
 create policy "admin_moderate_post" on posts for update
@@ -401,7 +422,12 @@ create policy "service_insert_audit" on audit_log for insert
 
 create policy "insert_own_comment" on comments for insert with check (auth.uid() = author_id);
 create policy "select_own_comment" on comments for select using (auth.uid() = author_id);
-create policy "update_own_comment" on comments for update using (auth.uid() = author_id);
+create policy "update_own_comment" on comments for update using (auth.uid() = author_id)
+  with check (
+    auth.uid() = author_id
+    and is_hidden = (select c.is_hidden from comments c where c.id = id)
+    and vote_score = (select c.vote_score from comments c where c.id = id)
+  );
 create policy "delete_own_comment" on comments for delete using (auth.uid() = author_id);
 
 create policy "manage_own_votes" on votes for all

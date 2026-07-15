@@ -8,6 +8,8 @@ export async function POST(request: NextRequest) {
 
   const supabase = await createClient()
   await supabase.auth.signOut()
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin
-  return NextResponse.redirect(new URL("/", siteUrl))
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+  const redirectUrl = siteUrl ? new URL("/", siteUrl) : new URL("/", request.url)
+  return NextResponse.redirect(redirectUrl)
 }

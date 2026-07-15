@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       .eq("user_id", user.id)
       .eq(post_id ? "post_id" : "comment_id", post_id ?? comment_id!)
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
     return NextResponse.json({ success: true })
   }
 
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       .from("votes")
       .update({ value })
       .eq("id", existing.data.id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
     return NextResponse.json({ success: true, action: "updated" })
   }
 
@@ -62,6 +62,6 @@ export async function POST(request: Request) {
     comment_id: comment_id ?? null,
     value,
   })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   return NextResponse.json({ success: true, action: "created" })
 }

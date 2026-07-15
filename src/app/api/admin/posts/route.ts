@@ -15,12 +15,12 @@ export async function GET(request: Request) {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("posts")
-    .select("id, alias, title, body, is_hidden, vote_score, created_at, author_id")
+    .select("id, alias, title, body, is_hidden, vote_score, created_at")
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1)
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 
   return NextResponse.json(data)

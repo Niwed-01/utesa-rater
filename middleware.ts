@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createMiddlewareClient } from "@/lib/supabase/server"
-import { rateLimitByIp, rateLimitByUser } from "@/lib/security/rate-limit"
+import { rateLimitByIp, rateLimitByUser, getRateLimitKey } from "@/lib/security/rate-limit"
 
 const ALLOWED_ORIGINS: string[] = [
   process.env.NEXT_PUBLIC_SITE_URL ?? "",
@@ -16,7 +16,10 @@ const RATE_LIMITED_ROUTES = [
   "/api/reports",
   "/api/professors",
   "/api/classes",
+  "/auth",
 ]
+
+const EXPORT_ROUTES = ["/api/admin/export"]
 
 const ADMIN_ROUTES = [
   "/admin",
@@ -30,36 +33,42 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  const path = request.nextUrl.pathname
+
   // CSRF / Origin validation for all non-GET requests
   if (request.method !== "GET") {
     const origin = request.headers.get("origin")
     const referer = request.headers.get("referer")
     const source = origin ?? (referer ? new URL(referer).origin : null)
 
-    if (source) {
-      const isAllowed = ALLOWED_ORIGINS.some(
-        (allowed) => allowed && source.startsWith(allowed),
+    if (!source) {
+      return NextResponse.json(
+        { error: "Origen no permitido" },
+        { status: 403 },
       )
-      if (!isAllowed) {
-        return NextResponse.json(
-          { error: "Origen no permitido" },
-          { status: 403 },
-        )
-      }
+    }
+
+    const isAllowed = ALLOWED_ORIGINS.some(
+      (allowed) => allowed === source,
+    )
+    if (!isAllowed) {
+      return NextResponse.json(
+        { error: "Origen no permitido" },
+        { status: 403 },
+      )
     }
   }
 
-  if (request.method !== "GET") {
-    const path = request.nextUrl.pathname
-    const isMutatingApi = RATE_LIMITED_ROUTES.some((p) => path.startsWith(p))
-    const isAdminRoute = ADMIN_ROUTES.some((p) => path.startsWith(p))
+  // Rate limiting for ALL requests (GET + mutations)
+  const isApiRoute = RATE_LIMITED_ROUTES.some((p) => path.startsWith(p))
+  const isAdminRoute = ADMIN_ROUTES.some((p) => path.startsWith(p))
+  const isExportRoute = EXPORT_ROUTES.some((p) => path.startsWith(p))
 
-    if (isMutatingApi || isAdminRoute) {
-      const ip =
-        request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-        request.headers.get("x-real-ip") ??
-        "unknown"
+  if (isApiRoute || isAdminRoute || isExportRoute) {
+    const ip = getRateLimitKey(request)
+    const isMutation = request.method !== "GET"
 
+    if (isMutation) {
       if (!rateLimitByIp(ip, 15, 60_000)) {
         return NextResponse.json(
           { error: "Demasiadas solicitudes. Intenta de nuevo en un minuto." },
@@ -68,18 +77,26 @@ export async function middleware(request: NextRequest) {
       }
 
       if (user) {
-        if (!rateLimitByUser(user.id, isAdminRoute ? 60 : 30, 60_000)) {
+        const limit = isExportRoute ? 10 : isAdminRoute ? 60 : 30
+        if (!rateLimitByUser(user.id, limit, 60_000)) {
           return NextResponse.json(
             { error: "Demasiadas solicitudes. Intenta de nuevo en un minuto." },
             { status: 429 },
           )
         }
       }
+    } else {
+      if (!rateLimitByIp(ip, 60, 60_000)) {
+        return NextResponse.json(
+          { error: "Demasiadas solicitudes. Intenta de nuevo en un minuto." },
+          { status: 429 },
+        )
+      }
     }
   }
 
   const authRoutes = ["/login", "/registro"]
-  if (user && authRoutes.includes(request.nextUrl.pathname)) {
+  if (user && authRoutes.includes(path)) {
     return NextResponse.redirect(new URL("/", request.url))
   }
 

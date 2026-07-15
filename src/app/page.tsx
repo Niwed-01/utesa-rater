@@ -224,7 +224,7 @@ export default async function HomePage() {
         <a
           href="https://nube.utesa.edu"
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer"
           className="flex shrink-0 items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/10 hover:bg-emerald-500 hover:shadow-emerald-500/20 active:scale-95 transition-all duration-200 w-full md:w-auto justify-center"
         >
           Entrar a UTESA Virtual

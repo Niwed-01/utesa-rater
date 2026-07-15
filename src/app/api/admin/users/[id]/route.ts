@@ -42,7 +42,7 @@ export async function PATCH(
     .eq("id", id)
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 
   if (parsed.data.is_banned !== undefined) {
@@ -75,7 +75,7 @@ export async function DELETE(
     .maybeSingle()
 
   if (findError) {
-    return NextResponse.json({ error: findError.message }, { status: 500 })
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 
   if (!target) {
@@ -97,7 +97,7 @@ export async function DELETE(
     .eq("id", id)
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 
   await logAudit(auth.user.id, "admin:delete_user", id)

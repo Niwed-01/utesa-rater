@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { requireAdmin } from "@/lib/auth"
 import { validateOrigin } from "@/lib/security/csrf"
+import { logAudit } from "@/lib/security/audit"
 import { z } from "zod"
 
 export const dynamic = "force-dynamic"
@@ -16,7 +17,7 @@ export async function GET() {
     .select("id, full_name, photo_url, created_at")
     .order("full_name", { ascending: true })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   return NextResponse.json(data)
 }
 
@@ -45,6 +46,11 @@ export async function POST(request: Request) {
     .select("id, full_name")
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+
+  await logAudit(auth.user.id, "admin:create_professor", data.id, {
+    full_name: parsed.data.full_name,
+  })
+
   return NextResponse.json(data, { status: 201 })
 }

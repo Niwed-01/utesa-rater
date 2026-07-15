@@ -28,13 +28,13 @@ export async function POST(request: Request) {
 
   if (action === "delete") {
     const { error } = await supabase.from("comments").delete().in("id", ids)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   } else {
     const { error } = await supabase
       .from("comments")
       .update({ is_hidden: action === "hide" })
       .in("id", ids)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 
   const auditAction = action === "delete" ? "admin:delete_comment" : action === "hide" ? "admin:hide_comment" : "admin:show_comment"

@@ -38,7 +38,7 @@ create trigger on_auth_user_created
 -- Función auxiliar security definer para evitar recursión infinita en RLS
 -- cuando policies sobre profiles necesitan consultar profiles.
 create or replace function public.is_admin() returns boolean
-language sql stable security definer
+language sql stable security definer set search_path = ''
 as $$
   select exists (
     select 1 from public.profiles
@@ -129,7 +129,7 @@ create index if not exists idx_posts_created on posts(created_at desc);
 -- Vista pública SIN author_id: nadie puede enlazar una reseña a una cuenta.
 -- Solo muestra publicaciones que no han sido ocultadas por moderación.
 drop view if exists posts_public;
-create view posts_public with (security_invoker) as
+create view posts_public as
   select id, professor_id, class_id, alias, title, body, tags,
          volveria_a_tomar,
          rating_claridad, rating_puntualidad, rating_exigencia,
@@ -156,7 +156,7 @@ create index if not exists idx_comments_post on comments(post_id);
 create index if not exists idx_comments_parent on comments(parent_id);
 
 drop view if exists comments_public;
-create view comments_public with (security_invoker) as
+create view comments_public as
   select id, post_id, parent_id, alias, body, vote_score, created_at
   from comments
   where is_hidden = false;
@@ -202,7 +202,7 @@ begin
 
   return null;
 end;
-$$ language plpgsql;
+$$ language plpgsql security definer set search_path = '';
 
 drop trigger if exists trg_vote_change on votes;
 create trigger trg_vote_change
@@ -227,6 +227,8 @@ create table if not exists reports (
   )
 );
 create index if not exists idx_reports_status on reports(status);
+create unique index if not exists uq_report_user_post on reports(reporter_id, post_id) where post_id is not null;
+create unique index if not exists uq_report_user_comment on reports(reporter_id, comment_id) where comment_id is not null;
 
 -- ------------------------------------------------------------
 -- 10. AUDITORÍA DE ACCIONES ADMIN
@@ -254,7 +256,29 @@ create policy "service_insert_audit" on audit_log for insert
   with check (public.is_admin());
 
 -- ------------------------------------------------------------
--- 11. CONSTRAINT: photo_url no puede ser javascript: ni data:
+-- 11b. FUNCIÓN SEGURA PARA MERGE DE PROFESORES (transaccional)
+-- ------------------------------------------------------------
+create or replace function merge_professors(source_id uuid, target_id uuid) returns void as $$
+begin
+  update posts set professor_id = target_id where professor_id = source_id;
+  delete from professor_classes pc1
+    using professor_classes pc2
+    where pc2.professor_id = source_id
+      and pc1.professor_id = target_id
+      and pc1.class_id = pc2.class_id;
+  delete from professor_careers pc1
+    using professor_careers pc2
+    where pc2.professor_id = source_id
+      and pc1.professor_id = target_id
+      and pc1.career_id = pc2.career_id;
+  update professor_classes set professor_id = target_id where professor_id = source_id;
+  update professor_careers set professor_id = target_id where professor_id = source_id;
+  delete from professors where id = source_id;
+end;
+$$ language plpgsql security definer set search_path = '';
+
+-- ------------------------------------------------------------
+-- 12. CONSTRAINT: photo_url no puede ser javascript: ni data:
 -- ------------------------------------------------------------
 alter table professors drop constraint if exists safe_photo_url;
 alter table professors add constraint safe_photo_url
@@ -280,7 +304,12 @@ create policy "select_own_profile" on profiles for select using (auth.uid() = id
 drop policy if exists "insert_own_profile" on profiles;
 create policy "insert_own_profile" on profiles for insert with check (auth.uid() = id);
 drop policy if exists "update_own_profile" on profiles;
-create policy "update_own_profile" on profiles for update using (auth.uid() = id);
+create policy "update_own_profile" on profiles for update using (auth.uid() = id)
+  with check (
+    auth.uid() = id
+    and is_admin = (select is_admin from public.profiles where id = auth.uid())
+    and is_banned = (select is_banned from public.profiles where id = auth.uid())
+  );
 
 -- Catálogo de profesores/clases/carreras: lectura pública
 drop policy if exists "public_read_professors" on professors;
@@ -294,28 +323,6 @@ create policy "public_read_profcareers" on professor_careers for select using (t
 drop policy if exists "public_read_profclasses" on professor_classes;
 create policy "public_read_profclasses" on professor_classes for select using (true);
 
--- Cualquier usuario autenticado puede crear profesores, clases y vincularlos
-drop policy if exists "authenticated_insert_professors" on professors;
-create policy "authenticated_insert_professors" on professors
-  for insert with check (auth.role() = 'authenticated');
-drop policy if exists "authenticated_insert_classes" on classes;
-create policy "authenticated_insert_classes" on classes
-  for insert with check (auth.role() = 'authenticated');
-drop policy if exists "authenticated_insert_profclasses" on professor_classes;
-create policy "authenticated_insert_profclasses" on professor_classes
-  for insert with check (auth.role() = 'authenticated');
-drop policy if exists "authenticated_insert_profcareers" on professor_careers;
-create policy "authenticated_insert_profcareers" on professor_careers
-  for insert with check (auth.role() = 'authenticated');
-
--- También pueden actualizar lo que ellos crearon
-drop policy if exists "authenticated_update_professors" on professors;
-create policy "authenticated_update_professors" on professors
-  for update using (auth.role() = 'authenticated');
-drop policy if exists "authenticated_update_classes" on classes;
-create policy "authenticated_update_classes" on classes
-  for update using (auth.role() = 'authenticated');
-
 -- Posts: insertar/editar/borrar solo el dueño. La tabla NO es legible
 -- públicamente (tiene author_id); todo el mundo lee desde posts_public.
 drop policy if exists "insert_own_post" on posts;
@@ -323,7 +330,12 @@ create policy "insert_own_post" on posts for insert with check (auth.uid() = aut
 drop policy if exists "select_own_post" on posts;
 create policy "select_own_post" on posts for select using (auth.uid() = author_id);
 drop policy if exists "update_own_post" on posts;
-create policy "update_own_post" on posts for update using (auth.uid() = author_id);
+create policy "update_own_post" on posts for update using (auth.uid() = author_id)
+  with check (
+    auth.uid() = author_id
+    and is_hidden = (select p.is_hidden from posts p where p.id = id)
+    and vote_score = (select p.vote_score from posts p where p.id = id)
+  );
 drop policy if exists "delete_own_post" on posts;
 create policy "delete_own_post" on posts for delete using (auth.uid() = author_id);
 
@@ -398,7 +410,12 @@ create policy "insert_own_comment" on comments for insert with check (auth.uid()
 drop policy if exists "select_own_comment" on comments;
 create policy "select_own_comment" on comments for select using (auth.uid() = author_id);
 drop policy if exists "update_own_comment" on comments;
-create policy "update_own_comment" on comments for update using (auth.uid() = author_id);
+create policy "update_own_comment" on comments for update using (auth.uid() = author_id)
+  with check (
+    auth.uid() = author_id
+    and is_hidden = (select c.is_hidden from comments c where c.id = id)
+    and vote_score = (select c.vote_score from comments c where c.id = id)
+  );
 drop policy if exists "delete_own_comment" on comments;
 create policy "delete_own_comment" on comments for delete using (auth.uid() = author_id);
 

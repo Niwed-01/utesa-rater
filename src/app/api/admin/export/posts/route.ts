@@ -14,7 +14,7 @@ export async function GET() {
     .select("alias, rating_general, vote_score, is_hidden, semester, created_at, professors(full_name)")
     .order("created_at", { ascending: false })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
 
 function escapeCsv(value: unknown): string {
   if (value == null) return ""

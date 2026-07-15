@@ -16,6 +16,12 @@ export type AuditAction =
   | "admin:update_report"
   | "admin:delete_report"
   | "admin:merge_professors"
+  | "admin:create_professor"
+  | "admin:update_professor"
+  | "admin:delete_professor"
+  | "admin:create_class"
+  | "admin:update_class"
+  | "admin:delete_class"
 
 export async function logAudit(
   adminId: string,
